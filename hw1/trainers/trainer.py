@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as f
 from torch.autograd import Variable
 from base.base_trainer import BaseTrainer
 
@@ -16,6 +15,7 @@ class Trainer(BaseTrainer):
         self.model.train()
         for batch_idx in range(n_batch):
             data, target = next(self.data_loader.next_batch())
+            data, target = torch.FloatTensor(data), torch.FloatTensor(target)
             data, target = Variable(data), Variable(target)
             self.optimizer.zero_grad()
             output = self.model(data)

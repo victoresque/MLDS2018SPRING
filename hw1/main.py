@@ -1,6 +1,6 @@
 import argparse
-from models.model import Model
-from data_loader.data_loader import DataLoader
+from models.model import DeepModel, ShallowModel
+from data_loader.function_data_loader import FunctionDataLoader
 from trainers.trainer import Trainer
 import torch.optim as optim
 import torch.nn.functional as f
@@ -18,14 +18,18 @@ parser.add_argument('--save-freq', default=1, type=int,
                     help='training checkpoint frequency (default: 5)')
 parser.add_argument('--data-dir', default='data/datasets', type=str,
                     help='directory of training/testing data (default: datasets)')
+parser.add_argument('--target-func', default='sin', type=str,
+                    help='target function (default: sin)')
 
 
 def main(args):
-    model = Model()
+    model = ShallowModel()
     model.summary()
-    loss = f.nll_loss
+    loss = f.mse_loss
     optimizer = optim.Adam(model.parameters())
-    data_loader = DataLoader(args.data_dir, args.batch_size)
+    data_loader = FunctionDataLoader(args.target_func,
+                                     batch_size=args.batch_size,
+                                     n_sample=10000, x_range=(0, 1))
     trainer = Trainer(model, data_loader, loss,
                       optimizer=optimizer,
                       epochs=args.epochs,
