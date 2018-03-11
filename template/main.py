@@ -1,6 +1,6 @@
 import argparse
 from models.model import Model
-from data.data_loader import DataLoader
+from data_loader.data_loader import DataLoader
 from trainers.trainer import Trainer
 import torch.optim as optim
 
