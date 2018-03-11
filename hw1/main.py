@@ -1,9 +1,10 @@
 import argparse
+import torch.optim as optim
+import torch.nn.functional as f
 from models.model import DeepModel, ShallowModel
 from data_loader.function_data_loader import FunctionDataLoader
 from trainers.trainer import Trainer
-import torch.optim as optim
-import torch.nn.functional as f
+from logger.logger import Logger
 
 parser = argparse.ArgumentParser(description='PyTorch Template')
 parser.add_argument('-b', '--batch-size', default=32, type=int,
@@ -20,6 +21,8 @@ parser.add_argument('--data-dir', default='data/datasets', type=str,
                     help='directory of training/testing data (default: datasets)')
 parser.add_argument('--target-func', default='sin', type=str,
                     help='target function (default: sin)')
+parser.add_argument('--no-cuda', action="store_true",
+                    help='use CPU in case there\'s no GPU support')
 
 
 def main(args):
@@ -30,12 +33,15 @@ def main(args):
     data_loader = FunctionDataLoader(args.target_func,
                                      batch_size=args.batch_size,
                                      n_sample=10000, x_range=(0, 1))
+    logger = Logger()
     trainer = Trainer(model, data_loader, loss,
                       optimizer=optimizer,
                       epochs=args.epochs,
+                      logger=logger,
                       save_dir=args.save_dir,
                       save_freq=args.save_freq,
-                      resume=args.resume)
+                      resume=args.resume,
+                      with_cuda=not args.no_cuda)
     trainer.train()
 
 
