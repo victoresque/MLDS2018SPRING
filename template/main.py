@@ -13,23 +13,25 @@ parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('--save-dir', default='models/saved', type=str,
                     help='directory of saved model (default: models/saved)')
-parser.add_argument('--save-freq', default=5, type=int,
+parser.add_argument('--save-freq', default=1, type=int,
                     help='training checkpoint frequency (default: 5)')
 parser.add_argument('--data-dir', default='data/datasets', type=str,
-                    help='directory of training/testing data (default: data/datasets)')
+                    help='directory of training/testing data (default: datasets)')
 
 
 def main(args):
-    print(args)
     model = Model()
+    model.summary()
     optimizer = optim.Adam(model.parameters())
-    data_loader = DataLoader()
+    data_loader = DataLoader(args.data_dir)
     trainer = Trainer(model,
                       data_loader,
-                      optimizer,
-                      args.epochs,
-                      args.batch_size)
-
+                      optimizer=optimizer,
+                      epochs=args.epochs,
+                      batch_size=args.batch_size,
+                      save_dir=args.save_dir,
+                      save_freq=args.save_freq,
+                      resume=args.resume)
     trainer.train()
 
 

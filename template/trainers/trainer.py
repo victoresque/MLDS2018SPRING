@@ -1,20 +1,16 @@
 from torch.autograd import Variable
 import torch.nn.functional as f
+from base.base_trainer import BaseTrainer
 
 
-class Trainer:
-    def __init__(self, model, data_loader, optimizer, epochs, batch_size):
-        self.model = model
-        self.epochs = epochs
-        self.optimizer = optimizer
+class Trainer(BaseTrainer):
+    def __init__(self, model, data_loader, optimizer, epochs, batch_size,
+                 save_dir, save_freq, resume):
+        super(Trainer, self).__init__(model, optimizer, epochs, save_dir, save_freq, resume)
         self.batch_size = batch_size
         self.data_loader = data_loader
 
-    def train(self):
-        for epoch in range(1, self.epochs+1):
-            self.train_epoch(epoch)
-
-    def train_epoch(self, epoch):
+    def _train_epoch(self, epoch):
         n_batch = len(self.data_loader)
 
         self.model.train()
@@ -26,7 +22,8 @@ class Trainer:
             loss = f.nll_loss(output, target)
             loss.backward()
             self.optimizer.step()
-            if batch_idx % 10 == 0:
+            if batch_idx % self.batch_size == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, batch_idx * len(data), n_batch * len(data),
                     100.0 * batch_idx / n_batch, loss.data[0]))
+        return 0

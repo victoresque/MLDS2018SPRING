@@ -1,10 +1,10 @@
-import numpy as np
 import torch
 from torchvision import datasets, transforms
 
 
 class DataLoader:
-    def __init__(self):
+    def __init__(self, data_dir):
+        self.data_dir = data_dir
         self.data_loader = torch.utils.data.DataLoader(
             datasets.MNIST('../data', train=True, download=True,
                            transform=transforms.Compose([

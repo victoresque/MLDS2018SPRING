@@ -14,7 +14,7 @@ class BaseModel(nn.Module):
         raise NotImplementedError
 
     def forward(self, x):
-        return self.model(x)
+        raise NotImplementedError
 
     def summary(self):
         model_parameters = filter(lambda p: p.requires_grad, self.parameters())
