@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from torch.autograd import Variable
 from base.base_trainer import BaseTrainer
 
@@ -21,7 +22,8 @@ class Trainer(BaseTrainer):
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx in range(n_batch):
-            data, target = next(self.data_loader.next_batch())
+            data, target = self.data_loader.next_batch()
+            data, target = torch.FloatTensor(data), torch.LongTensor(target)
             data, target = Variable(data), Variable(target)
             if self.with_cuda:
                 data, target = data.cuda(), target.cuda()

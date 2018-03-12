@@ -36,7 +36,7 @@ class BaseTrainer:
                 }
                 for i, metric in enumerate(self.metrics):
                     log[metric.__name__] = result[1][i]
-                self.logger.add_entry(epoch, log)
+                self.logger.add_entry(log)
                 if self.verbosity >= 1:
                     print(log)
 

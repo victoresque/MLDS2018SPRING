@@ -14,17 +14,22 @@ parser.add_argument('-e', '--epochs', default=32, type=int,
 parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('-v', '--verbosity', default=1, type=int,
-                    help='verbosity, 0: quiet, 1: per epoch, 2: complete (default: 2)')
+                    help='verbosity [0: quiet, 1: per epoch, 2: complete] (default: 2)')
 parser.add_argument('--save-dir', default='models/saved', type=str,
                     help='directory of saved model (default: models/saved)')
 parser.add_argument('--save-freq', default=1, type=int,
                     help='training checkpoint frequency (default: 5)')
 parser.add_argument('--data-dir', default='data/datasets', type=str,
                     help='directory of training/testing data (default: datasets)')
-parser.add_argument('--target-func', default='damp', type=str,
-                    help='target function (default: sin)')
 parser.add_argument('--no-cuda', action="store_true",
                     help='use CPU in case there\'s no GPU support')
+# HW1 specific arguments
+parser.add_argument('--dataset', default='func', type=str,
+                    help='training data [mnist, cifar, func] (default: func)')
+parser.add_argument('--target-func', default='damp', type=str,
+                    help='target function [sin, sinc, ceil, damp] (default: sin)')
+parser.add_argument('--arch', default='deep', type=str,
+                    help='model architecture [deep, shallow] (default: deep)')
 
 
 def main(args):

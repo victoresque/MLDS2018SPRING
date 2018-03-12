@@ -1,13 +1,13 @@
+import random
 import numpy as np
 import matplotlib.pyplot as plt
 from base.base_data_loader import BaseDataLoader
 
 
 class FunctionDataLoader(BaseDataLoader):
-    def __init__(self, target_func, batch_size, n_sample, x_range):
+    def __init__(self, target_func, batch_size, n_sample, x_range, shuffle=True):
         super(FunctionDataLoader, self).__init__(batch_size)
         self.batch_size = batch_size
-        self.n_sample = n_sample
         self.n_batch = n_sample // batch_size
         self.x_range = x_range
         if target_func == 'sin':
@@ -20,17 +20,26 @@ class FunctionDataLoader(BaseDataLoader):
             self.target_func = lambda x: np.exp(-2*x) * np.cos(4*np.pi*x)
         else:
             self.target_func = None
+        self.__generate_data()
+        if shuffle:
+            xy = [i for i in zip(self.x, self.y)]
+            # xy = random.shuffle(zip(self.x, self.y))
+            self.x = np.array([i for i, _ in xy])
+            self.y = np.array([i for _, i in xy])
+        self.batch_idx = 0
+
+    def __generate_data(self):
+        self.x = np.array([i for i in np.linspace(self.x_range[0], self.x_range[1],
+                                                  self.n_batch * self.batch_size)])
+        self.y = np.array([self.target_func(i) for i in self.x])
 
     def next_batch(self):
-        for batch_idx in range(self.n_batch):
-            x = np.random.uniform(self.x_range[0], self.x_range[1], self.batch_size)
-            y = [self.target_func(i) for i in x]
-            # plt.plot(x, y, 'ro')
-            # plt.show()
-            # input()
-            x = np.array(x).reshape((-1, 1))
-            y = np.array(y).reshape((-1, 1))
-            yield (x, y)
+        x_batch = self.x[self.batch_idx * self.batch_size:(self.batch_idx+1) * self.batch_size]
+        y_batch = self.y[self.batch_idx * self.batch_size:(self.batch_idx+1) * self.batch_size]
+        x_batch = x_batch.reshape((-1, 1))
+        y_batch = y_batch.reshape((-1, 1))
+        self.batch_idx = self.batch_idx+1 if self.batch_idx != self.n_batch-1 else 0
+        return x_batch, y_batch
 
     def __len__(self):
         return self.n_batch
