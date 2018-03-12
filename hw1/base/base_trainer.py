@@ -7,31 +7,38 @@ from utils.util import ensure_dir
 
 
 class BaseTrainer:
-    def __init__(self, model, loss, optimizer, epochs,
-                 save_dir, save_freq, resume, logger=None):
+    def __init__(self, model, loss, metrics, optimizer, epochs,
+                 save_dir, save_freq, resume, verbosity, logger=None):
         self.model = model
         self.loss = loss
+        self.metrics = metrics
+        self.optimizer = optimizer
         self.epochs = epochs
         self.save_dir = save_dir
         self.save_freq = save_freq
-        self.optimizer = optimizer
+        self.verbosity = verbosity
+        self.logger = logger
         self.min_loss = math.inf
         self.start_epoch = 1
-        self.logger = logger
         ensure_dir(save_dir)
         if resume:
             self._resume_checkpoint(resume)
 
     def train(self):
         for epoch in range(self.start_epoch, self.epochs+1):
-            loss = self._train_epoch(epoch)
+            result = self._train_epoch(epoch)
             if epoch % self.save_freq == 0:
-                self._save_checkpoint(epoch, loss)
+                self._save_checkpoint(epoch, result[0])
             if self.logger:
-                self.logger.add_entry(epoch, {
-                    'loss': loss
-                })
-                self.logger.print()
+                log = {
+                    'epoch': epoch,
+                    'loss': result[0]
+                }
+                for i, metric in enumerate(self.metrics):
+                    log[metric.__name__] = result[1][i]
+                self.logger.add_entry(epoch, log)
+                if self.verbosity >= 1:
+                    print(log)
 
     def _train_epoch(self, epoch):
         raise NotImplementedError

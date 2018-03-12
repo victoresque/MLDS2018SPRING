@@ -1,18 +1,21 @@
 import argparse
 import torch.optim as optim
-import torch.nn.functional as f
 from models.model import Model
+from models.loss import nll_loss
+from models.metric import accuracy
 from data_loader.data_loader import DataLoader
 from trainers.trainer import Trainer
 from logger.logger import Logger
 
 parser = argparse.ArgumentParser(description='PyTorch Template')
-parser.add_argument('-b', '--batch-size', default=32, type=int,
+parser.add_argument('-b', '--batch-size', default=256, type=int,
                     help='mini-batch size (default: 32)')
-parser.add_argument('-e', '--epochs', default=10, type=int,
+parser.add_argument('-e', '--epochs', default=5, type=int,
                     help='number of total epochs (default: 32)')
 parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
+parser.add_argument('-v', '--verbosity', default=2, type=int,
+                    help='verbosity, 0: quiet, 1: per epoch, 2: complete (default: 2)')
 parser.add_argument('--save-dir', default='models/saved', type=str,
                     help='directory of saved model (default: models/saved)')
 parser.add_argument('--save-freq', default=1, type=int,
@@ -26,19 +29,23 @@ parser.add_argument('--no-cuda', action="store_true",
 def main(args):
     model = Model()
     model.summary()
-    loss = f.nll_loss
+    logger = Logger()
+
+    loss = nll_loss
+    metrics = [accuracy]
     optimizer = optim.Adam(model.parameters())
     data_loader = DataLoader(args.data_dir, args.batch_size)
-    logger = Logger()
-    trainer = Trainer(model, data_loader, loss,
+    trainer = Trainer(model, data_loader, loss, metrics,
                       optimizer=optimizer,
                       epochs=args.epochs,
                       logger=logger,
                       save_dir=args.save_dir,
                       save_freq=args.save_freq,
                       resume=args.resume,
+                      verbosity=args.verbosity,
                       with_cuda=not args.no_cuda)
     trainer.train()
+    logger.print()
 
 
 if __name__ == '__main__':
