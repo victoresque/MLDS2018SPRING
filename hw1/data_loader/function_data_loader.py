@@ -13,7 +13,7 @@ class FunctionDataLoader(BaseDataLoader):
         if target_func == 'sin':
             self.target_func = lambda x: np.sin(4*np.pi*x)
         elif target_func == 'sinc':
-            self.target_func = lambda x: np.sin(4*np.pi*x) / (4*np.pi*x)
+            self.target_func = lambda x: np.sin(4*np.pi*x) / (4*np.pi*x + 1e-10)
         elif target_func == 'ceil':
             self.target_func = lambda x: np.ceil(6*x) / 6
         elif target_func == 'damp':

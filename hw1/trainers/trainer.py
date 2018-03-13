@@ -23,7 +23,9 @@ class Trainer(BaseTrainer):
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx in range(n_batch):
             data, target = self.data_loader.next_batch()
-            data, target = torch.FloatTensor(data), torch.FloatTensor(target)
+            target_dtype = str(target.dtype)
+            data = torch.FloatTensor(data)
+            target = torch.FloatTensor(target) if target_dtype[0] == 'f' else torch.LongTensor(target)
             data, target = Variable(data), Variable(target)
             if self.with_cuda:
                 data, target = data.cuda(), target.cuda()
