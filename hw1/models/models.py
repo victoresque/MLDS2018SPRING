@@ -75,25 +75,21 @@ class DeepMnistCNN(BaseModel):
     def build_model(self):
         self.cnn = nn.Sequential(
             # 28x28
-            nn.Conv2d(1, 8, kernel_size=3, padding=1),
+            nn.Conv2d(1, 16, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
             # 14x14
-            nn.Conv2d(8, 16, kernel_size=3),
+            nn.Conv2d(16, 16, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
             # 6x6
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.Conv2d(16, 18, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
             # 3x3
         )
         self.fc = nn.Sequential(
-            nn.Linear(32 * 3 * 3, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 10)
+            nn.Linear(18 * 3 * 3, 10),
         )
 
     def forward(self, x):
@@ -112,21 +108,17 @@ class MiddleMnistCNN(BaseModel):
     def build_model(self):
         self.cnn = nn.Sequential(
             # 28x28
-            nn.Conv2d(1, 8, kernel_size=3, padding=1),
+            nn.Conv2d(1, 7, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
             # 14x14
-            nn.Conv2d(8, 16, kernel_size=3, padding=1),
+            nn.Conv2d(7, 12, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
             # 7x7
         )
         self.fc = nn.Sequential(
-            nn.Linear(16 * 7 * 7, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 10)
+            nn.Linear(12 * 7 * 7, 10),
         )
 
     def forward(self, x):
@@ -145,17 +137,13 @@ class ShallowMnistCNN(BaseModel):
     def build_model(self):
         self.cnn = nn.Sequential(
             # 28x28
-            nn.Conv2d(1, 8, kernel_size=3, padding=1),
+            nn.Conv2d(1, 4, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
-            # 14x14
+            # 13x13
         )
         self.fc = nn.Sequential(
-            nn.Linear(8 * 14 * 14, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 10)
+            nn.Linear(4 * 13 * 13, 10),
         )
 
     def forward(self, x):

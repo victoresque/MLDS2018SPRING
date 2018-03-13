@@ -69,7 +69,7 @@ def main(args):
                                          n_sample=32768, x_range=(0, 1))
 
     model.summary()
-    optimizer = optim.Adam(model.parameters(), lr=1e-4)
+    optimizer = optim.Adam(model.parameters())
     trainer = Trainer(model, data_loader, loss, metrics,
                       optimizer=optimizer,
                       epochs=args.epochs,
