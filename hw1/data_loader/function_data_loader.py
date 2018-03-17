@@ -15,7 +15,7 @@ class FunctionDataLoader(BaseDataLoader):
         elif target_func == 'sinc':
             self.target_func = lambda x: np.sin(4*np.pi*x) / (4*np.pi*x + 1e-10)
         elif target_func == 'stair':
-            self.target_func = lambda x: np.ceil(4*x) / 4 - 2.5
+            self.target_func = lambda x: (np.ceil(4*x) - 2.5) / 1.5
         elif target_func == 'damp':
             self.target_func = lambda x: np.exp(-2*x) * np.cos(4*np.pi*x)
         else:

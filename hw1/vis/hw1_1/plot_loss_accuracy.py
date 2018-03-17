@@ -25,7 +25,6 @@ if __name__ == '__main__':
             plt.semilogy(x, y, color, label=arch + base_arch)
             plt.legend(loc="best")
 
-
     data_list = ['mnist', 'cifar']
     base_arch = 'CNN'
     plt.figure(figsize=(12, 9))
