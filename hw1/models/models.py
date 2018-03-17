@@ -170,17 +170,13 @@ class DeepCifarCNN(BaseModel):
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
             # 8x8
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.Conv2d(16, 25, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
             # 4x4
         )
         self.fc = nn.Sequential(
-            nn.Linear(32 * 4 * 4, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 10)
+            nn.Linear(25 * 4 * 4, 10)
         )
 
     def forward(self, x):
@@ -199,21 +195,17 @@ class MiddleCifarCNN(BaseModel):
     def build_model(self):
         self.cnn = nn.Sequential(
             # 32x32
-            nn.Conv2d(3, 8, kernel_size=3, padding=1),
+            nn.Conv2d(3, 7, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
             # 16x16
-            nn.Conv2d(8, 16, kernel_size=3, padding=1),
+            nn.Conv2d(7, 16, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
-            # 8x8
+            # 7x7
         )
         self.fc = nn.Sequential(
-            nn.Linear(16 * 8 * 8, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 10)
+            nn.Linear(16 * 7 * 7, 10)
         )
 
     def forward(self, x):
@@ -232,17 +224,13 @@ class ShallowCifarCNN(BaseModel):
     def build_model(self):
         self.cnn = nn.Sequential(
             # 32x32
-            nn.Conv2d(3, 8, kernel_size=3, padding=1),
+            nn.Conv2d(3, 4, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, stride=2),
-            # 16x16
+            # 15x15
         )
         self.fc = nn.Sequential(
-            nn.Linear(8 * 16 * 16, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 10)
+            nn.Linear(4 * 15 * 15, 10)
         )
 
     def forward(self, x):

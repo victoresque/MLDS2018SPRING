@@ -6,9 +6,9 @@ from base.base_trainer import BaseTrainer
 
 class Trainer(BaseTrainer):
     def __init__(self, model, data_loader, loss, metrics, optimizer, epochs,
-                 save_dir, save_freq, resume, with_cuda, verbosity, logger=None):
+                 save_dir, save_freq, resume, with_cuda, verbosity, identifier='', logger=None):
         super(Trainer, self).__init__(model, loss, metrics, optimizer, epochs,
-                                      save_dir, save_freq, resume, verbosity, logger)
+                                      save_dir, save_freq, resume, verbosity, identifier, logger)
         self.batch_size = data_loader.batch_size
         self.data_loader = data_loader
         self.with_cuda = with_cuda
@@ -35,7 +35,6 @@ class Trainer(BaseTrainer):
             loss = self.loss(output, target)
             loss.backward()
             self.optimizer.step()
-
             for i, metric in enumerate(self.metrics):
                 y_output = output.data.cpu().numpy()
                 y_output = np.argmax(y_output, axis=1)
@@ -45,7 +44,7 @@ class Trainer(BaseTrainer):
             total_loss += loss.data[0]
             log_step = int(np.sqrt(self.batch_size))
             if self.verbosity >= 2 and batch_idx % log_step == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                print('Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
                     epoch, batch_idx * len(data), n_batch * len(data),
                     100.0 * batch_idx / n_batch, loss.data[0]))
 

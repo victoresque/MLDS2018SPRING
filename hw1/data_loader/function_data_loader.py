@@ -14,18 +14,17 @@ class FunctionDataLoader(BaseDataLoader):
             self.target_func = lambda x: np.sin(4*np.pi*x)
         elif target_func == 'sinc':
             self.target_func = lambda x: np.sin(4*np.pi*x) / (4*np.pi*x + 1e-10)
-        elif target_func == 'ceil':
-            self.target_func = lambda x: np.ceil(6*x) / 6
+        elif target_func == 'stair':
+            self.target_func = lambda x: np.ceil(4*x) / 4 - 2.5
         elif target_func == 'damp':
             self.target_func = lambda x: np.exp(-2*x) * np.cos(4*np.pi*x)
         else:
             self.target_func = None
         self.__generate_data()
         if shuffle:
-            xy = [i for i in zip(self.x, self.y)]
-            # xy = random.shuffle(zip(self.x, self.y))
-            self.x = np.array([i for i, _ in xy])
-            self.y = np.array([i for _, i in xy])
+            rand_idx = np.random.permutation(len(self.x))
+            self.x = np.array([self.x[i] for i in rand_idx])
+            self.y = np.array([self.y[i] for i in rand_idx])
         self.batch_idx = 0
 
     def __generate_data(self):
@@ -43,5 +42,3 @@ class FunctionDataLoader(BaseDataLoader):
 
     def __len__(self):
         return self.n_batch
-
-
