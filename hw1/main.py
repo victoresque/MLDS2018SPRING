@@ -34,6 +34,8 @@ parser.add_argument('--target-func', default='sinc', type=str,
                     help='target function [sin, sinc, stair, damp] (default: sinc)')
 parser.add_argument('--arch', default='deep', type=str,
                     help='model architecture [deep, middle, shallow] (default: deep)')
+parser.add_argument('--save-grad', action="store_true",
+                    help='saving average gradient norm for HW1-2')
 '''  HW1 requirements
   1. function regression
      (1) >=3 models
@@ -72,7 +74,6 @@ def main(args):
         identifier = type(model).__name__ + '_' + args.target_func + '_'
 
     model.summary()
-    # optimizer = optim.SGD(model.parameters(), lr=1e-2, momentum=0.9)
     optimizer = optim.Adam(model.parameters())
     trainer = Trainer(model, data_loader, loss, metrics,
                       optimizer=optimizer,
@@ -83,7 +84,8 @@ def main(args):
                       resume=args.resume,
                       verbosity=args.verbosity,
                       identifier=identifier,
-                      with_cuda=not args.no_cuda)
+                      with_cuda=not args.no_cuda,
+                      save_grad=args.save_grad)
     trainer.train()
     logger.print()
     

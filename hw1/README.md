@@ -2,7 +2,7 @@
 
 ## HW1
 
-### 1-1
+### 1-1 Deep vs. Shallow
   * **Training**
     1. Training DNN on functions
        ```
@@ -26,3 +26,42 @@
        optimizer = optim.Adam(model.parameters())
        ```
   * **Visualization**
+    1. Plot loss-epoch graph
+       ```
+       python plot_loss_accuracy.py
+       ```
+    2. Plot accuracy-epoch graph (for MNIST/CIFAR-10)
+       ```
+       python plot_loss_accuracy.py
+       ```
+    3. Plot function and predicted values (for function regression)
+       ```
+       python plot_function.py
+       ```
+
+### 1-2 Optimization
+  * **Training**
+    1. Training for visualizing optimization process
+       ```
+       python main.py --batch-size 128 --epochs 60 --save-freq 1 --dataset mnist --arch deep --save-dir models/saved/1-2-1/[1-8]
+       ```
+    2. Training for visualizing gradient norm
+       (1) MNIST
+          ```
+          python main.py --batch-size 256 --epochs 10000 --save-freq 200 --dataset mnist --arch deep --save-grad
+          ```
+       (2) sinc
+          ```
+          python main.py --batch-size 128 --epochs 10000 --save-freq 200 --arch deep --save-grad
+          ```
+    3. 
+  * **Visualization**
+    1. Visualizing dimensional reduced model parameters in training process
+       ```
+       python plot_param_pca.py
+       ```
+    2. Visualizing gradient norm of model in training process
+       ```
+       python plot_grad_norm.py
+       ```
+

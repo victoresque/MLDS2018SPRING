@@ -6,12 +6,13 @@ from base.base_trainer import BaseTrainer
 
 class Trainer(BaseTrainer):
     def __init__(self, model, data_loader, loss, metrics, optimizer, epochs,
-                 save_dir, save_freq, resume, with_cuda, verbosity, identifier='', logger=None):
+                 save_dir, save_freq, resume, with_cuda, verbosity, identifier='', logger=None, save_grad=False):
         super(Trainer, self).__init__(model, loss, metrics, optimizer, epochs,
                                       save_dir, save_freq, resume, verbosity, identifier, logger)
         self.batch_size = data_loader.batch_size
         self.data_loader = data_loader
         self.with_cuda = with_cuda
+        self.save_grad = save_grad
 
     def _train_epoch(self, epoch):
         n_batch = len(self.data_loader)
@@ -50,4 +51,15 @@ class Trainer(BaseTrainer):
 
         avg_loss = total_loss / n_batch
         avg_metrics = (total_metrics / n_batch).tolist()
-        return avg_loss, avg_metrics
+
+        if self.save_grad:
+            grad_all = 0.0
+            for p in self.model.parameters():
+                grad = 0.0
+                if p.grad is not None:
+                    grad = (p.grad.cpu().data.numpy() ** 2).sum()
+                grad_all += grad
+            grad_norm = grad_all ** 0.5
+            return {'loss': avg_loss, 'metrics': avg_metrics, 'grad_norm': grad_norm}
+        else:
+            return {'loss': avg_loss, 'metrics': avg_metrics}

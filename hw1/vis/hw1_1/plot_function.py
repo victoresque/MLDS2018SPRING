@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from models.models import DeepFC, MiddleFC, ShallowFC
 
+
 if __name__ == '__main__':
     func_name_list = ['sinc', 'stair']
     func_lambda_list = [lambda x: np.sin(4*np.pi*x) / (4*np.pi*x + 1e-10),
