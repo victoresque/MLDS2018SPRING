@@ -71,7 +71,7 @@ if __name__ == '__main__':
             all_accs.append(checkpoint['logger'].entries[epoch - 1]['accuracy'])
 
     all_params = np.array(all_params)
-    IncrementalPCA(2, batch_size=6).fit_transform(all_params)
+    IncrementalPCA(2, batch_size=12).fit_transform(all_params)
 
     x = []
     y = []
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         x_ = x[(i - 1) * seg:i * seg]
         y_ = y[(i - 1) * seg:i * seg]
         a_ = all_accs[(i - 1) * seg:i * seg]
-        plt.plot(x_, y_, 'o:', color=cmap((i-1) / 7))
+        plt.plot(x_, y_, 'o:', color=cmap((i - 1) / 7))
         for xi, yi, ai in zip(x_, y_, a_):
             plt.annotate(str('{:.1f}'.format(ai*100)), xy=(xi, yi),
                          xytext=(xi + 0.004, yi + 0.004), color=cmap((i - 1) / 7.5))
