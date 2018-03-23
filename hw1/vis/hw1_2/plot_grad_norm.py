@@ -12,25 +12,19 @@ if __name__ == '__main__':
     for i, (filename, color) in enumerate(zip(checkpoint_filenames, color_list)):
         checkpoint = torch.load(os.path.join(checkpoint_base, filename))
         logger = checkpoint['logger']
-        x = []
-        y = []
-        for _, entry in logger.entries.items():
-            x.append(entry['epoch'])
-            y.append(entry['loss'])
-        x = x[2:int(checkpoint['epoch']*0.6)]
-        y = y[2:int(checkpoint['epoch']*0.6)]
+        x = [entry['epoch'] for _, entry in logger.entries.items()]
+        y = [entry['loss'] for _, entry in logger.entries.items()]
+        x = x[2:int(checkpoint['epoch'] * 0.6)]
+        y = y[2:int(checkpoint['epoch'] * 0.6)]
         plt.subplot(220 + i + 1)
         plt.title('' + ' loss')
         plt.plot(x, y, color, label='loss')
         plt.legend(loc="best")
 
-        x = []
-        y = []
-        for _, entry in logger.entries.items():
-            x.append(entry['epoch'])
-            y.append(entry['grad_norm'])
-        x = x[2:int(checkpoint['epoch']*0.6)]
-        y = y[2:int(checkpoint['epoch']*0.6)]
+        x = [entry['epoch'] for _, entry in logger.entries.items()]
+        y = [entry['grad_norm'] for _, entry in logger.entries.items()]
+        x = x[2:int(checkpoint['epoch'] * 0.6)]
+        y = y[2:int(checkpoint['epoch'] * 0.6)]
         plt.subplot(220 + i + 3)
         plt.title('' + ' gradient norm')
         plt.plot(x, y, color, label='grad_norm')

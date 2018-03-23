@@ -20,25 +20,32 @@ class FunctionDataLoader(BaseDataLoader):
             self.target_func = lambda x: np.exp(-2*x) * np.cos(4*np.pi*x)
         else:
             self.target_func = None
-        self.__generate_data()
+        self.x = np.array([i for i in np.linspace(self.x_range[0], self.x_range[1],
+                                                  self.n_batch * self.batch_size)])
+        self.y = np.array([self.target_func(i) for i in self.x])
         if shuffle:
             rand_idx = np.random.permutation(len(self.x))
             self.x = np.array([self.x[i] for i in rand_idx])
             self.y = np.array([self.y[i] for i in rand_idx])
         self.batch_idx = 0
 
-    def __generate_data(self):
-        self.x = np.array([i for i in np.linspace(self.x_range[0], self.x_range[1],
-                                                  self.n_batch * self.batch_size)])
-        self.y = np.array([self.target_func(i) for i in self.x])
+    def __iter__(self):
+        self.n_batch = len(self.x) // self.batch_size
+        self.batch_idx = 0
+        assert self.n_batch > 0
+        return self
 
-    def next_batch(self):
-        x_batch = self.x[self.batch_idx * self.batch_size:(self.batch_idx+1) * self.batch_size]
-        y_batch = self.y[self.batch_idx * self.batch_size:(self.batch_idx+1) * self.batch_size]
-        x_batch = x_batch.reshape((-1, 1))
-        y_batch = y_batch.reshape((-1, 1))
-        self.batch_idx = self.batch_idx+1 if self.batch_idx != self.n_batch-1 else 0
-        return x_batch, y_batch
+    def __next__(self):
+        if self.batch_idx < self.n_batch:
+            x_batch = self.x[self.batch_idx * self.batch_size:(self.batch_idx+1) * self.batch_size]
+            y_batch = self.y[self.batch_idx * self.batch_size:(self.batch_idx+1) * self.batch_size]
+            x_batch = x_batch.reshape((-1, 1))
+            y_batch = y_batch.reshape((-1, 1))
+            self.batch_idx = self.batch_idx + 1
+            return x_batch, y_batch
+        else:
+            raise StopIteration
 
     def __len__(self):
+        self.n_batch = len(self.x) // self.batch_size
         return self.n_batch

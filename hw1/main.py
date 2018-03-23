@@ -7,17 +7,18 @@ from models.loss import mse_loss, cross_entropy_loss
 from models.metric import accuracy
 from data_loader.function_data_loader import FunctionDataLoader
 from data_loader.data_loader import MnistLoader, CifarLoader
+from utils.util import split_validation
 from trainers.trainer import Trainer
 from logger.logger import Logger
 
 parser = argparse.ArgumentParser(description='Homework 1')
-parser.add_argument('-b', '--batch-size', default=128, type=int,
+parser.add_argument('-b', '--batch-size', default=32, type=int,
                     help='mini-batch size (default: 32)')
 parser.add_argument('-e', '--epochs', default=20000, type=int,
                     help='number of total epochs (default: 32)')
 parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
-parser.add_argument('-v', '--verbosity', default=1, type=int,
+parser.add_argument('--verbosity', default=1, type=int,
                     help='verbosity [0: quiet, 1: per epoch, 2: complete] (default: 2)')
 parser.add_argument('--save-dir', default='models/saved', type=str,
                     help='directory of saved model (default: models/saved)')
@@ -25,6 +26,8 @@ parser.add_argument('--save-freq', default=20, type=int,
                     help='training checkpoint frequency (default: 5)')
 parser.add_argument('--data-dir', default='data/datasets', type=str,
                     help='directory of training/testing data (default: datasets)')
+parser.add_argument('--validation-split', default=0.0, type=float,
+                    help='ratio of split validation data ([0.0, 1.0), default: 0.0)')
 parser.add_argument('--no-cuda', action="store_true",
                     help='use CPU in case there\'s no GPU support')
 # HW1 specific arguments
@@ -36,24 +39,6 @@ parser.add_argument('--arch', default='deep', type=str,
                     help='model architecture [deep, middle, shallow] (default: deep)')
 parser.add_argument('--save-grad', action="store_true",
                     help='saving average gradient norm for HW1-2')
-'''  HW1 requirements
-  1. function regression
-     (1) >=3 models
-     (2) >=2 functions
-     (3) plot the function (ground truth + predicted)
-         [total: >=6 charts]
-     (4) plot a loss-epoch chart for each model
-         [total: >=6 charts]
-  2. real problem
-     (1) >=3 models
-     (2) >=2 tasks
-     (3) plot a loss-epoch chart for each model
-         [total: >=6 charts]
-     (4) plot a accuracy-epoch chart for each model
-         [total: >=6 charts]
-'''
-# TODO: validation data, validation split
-# TODO: change DataLoader to generator
 
 
 def main(args):
@@ -75,7 +60,10 @@ def main(args):
 
     model.summary()
     optimizer = optim.Adam(model.parameters())
-    trainer = Trainer(model, data_loader, loss, metrics,
+    data_loader, valid_data_loader = split_validation(data_loader, args.validation_split)
+    trainer = Trainer(model, loss, metrics,
+                      data_loader=data_loader,
+                      valid_data_loader=valid_data_loader,
                       optimizer=optimizer,
                       epochs=args.epochs,
                       logger=logger,
@@ -87,8 +75,8 @@ def main(args):
                       with_cuda=not args.no_cuda,
                       save_grad=args.save_grad)
     trainer.train()
-    logger.print()
-    
+    print(logger)
+
 
 if __name__ == '__main__':
     main(parser.parse_args())

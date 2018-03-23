@@ -23,11 +23,20 @@ class MnistLoader(BaseDataLoader):
         self.n_batch = len(self.x) // self.batch_size
         self.batch_idx = 0
 
-    def next_batch(self):
-        x_batch = self.x[self.batch_idx * self.batch_size:(self.batch_idx + 1) * self.batch_size]
-        y_batch = self.y[self.batch_idx * self.batch_size:(self.batch_idx + 1) * self.batch_size]
-        self.batch_idx = self.batch_idx + 1 if self.batch_idx + 1 < self.n_batch else 0
-        return x_batch, y_batch
+    def __iter__(self):
+        self.n_batch = len(self.x) // self.batch_size
+        self.batch_idx = 0
+        assert self.n_batch > 0
+        return self
+
+    def __next__(self):
+        if self.batch_idx < self.n_batch:
+            x_batch = self.x[self.batch_idx * self.batch_size:(self.batch_idx + 1) * self.batch_size]
+            y_batch = self.y[self.batch_idx * self.batch_size:(self.batch_idx + 1) * self.batch_size]
+            self.batch_idx = self.batch_idx + 1
+            return x_batch, y_batch
+        else:
+            raise StopIteration
 
     def __len__(self):
         return self.n_batch
@@ -53,11 +62,20 @@ class CifarLoader(BaseDataLoader):
         self.n_batch = len(self.x) // self.batch_size
         self.batch_idx = 0
 
-    def next_batch(self):
-        x_batch = self.x[self.batch_idx * self.batch_size:(self.batch_idx + 1) * self.batch_size]
-        y_batch = self.y[self.batch_idx * self.batch_size:(self.batch_idx + 1) * self.batch_size]
-        self.batch_idx = self.batch_idx + 1 if self.batch_idx + 1 < self.n_batch else 0
-        return x_batch, y_batch
+    def __iter__(self):
+        self.n_batch = len(self.x) // self.batch_size
+        self.batch_idx = 0
+        assert self.n_batch > 0
+        return self
+
+    def __next__(self):
+        if self.batch_idx < self.n_batch:
+            x_batch = self.x[self.batch_idx * self.batch_size:(self.batch_idx + 1) * self.batch_size]
+            y_batch = self.y[self.batch_idx * self.batch_size:(self.batch_idx + 1) * self.batch_size]
+            self.batch_idx = self.batch_idx + 1
+            return x_batch, y_batch
+        else:
+            raise StopIteration
 
     def __len__(self):
         return self.n_batch

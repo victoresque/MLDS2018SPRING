@@ -9,8 +9,8 @@ from models.models import DeepFC, MiddleFC, ShallowFC
 
 if __name__ == '__main__':
     func_name_list = ['sinc', 'stair']
-    func_lambda_list = [lambda x: np.sin(4*np.pi*x) / (4*np.pi*x + 1e-10),
-                        lambda x: np.ceil(4 * x) / 4 - 2.5]
+    func_lambda_list = [lambda x: np.sin(4 * np.pi * x) / (4 * np.pi * x + 1e-10),
+                        lambda x: (np.ceil(4 * x) - 2.5) / 1.5]
     arch_list = ['Deep', 'Middle', 'Shallow']
     base_arch = 'FC'
     color_list = ['r', 'g', 'b']
@@ -24,7 +24,7 @@ if __name__ == '__main__':
         plt.subplot(220 + i + 1)
         plt.plot(x, y_target, 'k', label='Ground truth')
         for arch, color in zip(arch_list, color_list):
-            checkpoint = torch.load('../../models/saved/'+arch+base_arch+'_'+func_name+'_checkpoint.pth.tar')
+            checkpoint = torch.load('../../models/saved/1-1/'+arch+base_arch+'_'+func_name+'_checkpoint.pth.tar')
             model = eval(checkpoint['arch'])()
             model.load_state_dict(checkpoint['state_dict'])
             model.eval()

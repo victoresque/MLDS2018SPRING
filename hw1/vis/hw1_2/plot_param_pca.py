@@ -9,7 +9,7 @@ from sklearn.externals import joblib
 
 
 if __name__ == '__main__':
-    base = '/home/victorhuang/Desktop/MLDS2018SPRING/hw1/models/saved/1-2-1/'
+    base = 'models/saved/1-2-1/'
     epoch_step = 4
     epoch_max = 40
     cmap = get_cmap('hsv')
@@ -34,12 +34,8 @@ if __name__ == '__main__':
 
     all_params = np.array(all_params)
     IncrementalPCA(2, batch_size=6).fit_transform(all_params)
-
-    x = []
-    y = []
-    for p in all_params:
-        x.append(p[0])
-        y.append(p[1])
+    x = [p[0] for p in all_params]
+    y = [p[1] for p in all_params]
 
     seg = len(range(1, epoch_max, epoch_step))
     plt.subplot(121)
@@ -54,7 +50,7 @@ if __name__ == '__main__':
                          xytext=(xi + 0.004, yi + 0.004), color=cmap((i - 1) / 7.5))
     plt.grid()
 
-    # First layer
+    # One layer
     all_params = []
     all_accs = []
     for i in range(1, 9):
@@ -72,12 +68,8 @@ if __name__ == '__main__':
 
     all_params = np.array(all_params)
     IncrementalPCA(2, batch_size=12).fit_transform(all_params)
-
-    x = []
-    y = []
-    for p in all_params:
-        x.append(p[0])
-        y.append(p[1])
+    x = [p[0] for p in all_params]
+    y = [p[1] for p in all_params]
 
     seg = len(range(1, epoch_max, epoch_step))
     plt.subplot(122)
@@ -88,7 +80,7 @@ if __name__ == '__main__':
         a_ = all_accs[(i - 1) * seg:i * seg]
         plt.plot(x_, y_, 'o:', color=cmap((i - 1) / 7))
         for xi, yi, ai in zip(x_, y_, a_):
-            plt.annotate(str('{:.1f}'.format(ai*100)), xy=(xi, yi),
+            plt.annotate(str('{:.1f}'.format(ai * 100)), xy=(xi, yi),
                          xytext=(xi + 0.004, yi + 0.004), color=cmap((i - 1) / 7.5))
     plt.grid()
     plt.show()

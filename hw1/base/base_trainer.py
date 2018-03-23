@@ -2,7 +2,6 @@ import os
 import math
 import shutil
 import torch
-from tqdm import tqdm
 from utils.util import ensure_dir
 
 
@@ -29,14 +28,15 @@ class BaseTrainer:
         for epoch in range(self.start_epoch, self.epochs+1):
             result = self._train_epoch(epoch)
             if self.logger:
-                log = {
-                    'epoch': epoch,
-                    'loss': result['loss']
-                }
-                for i, metric in enumerate(self.metrics):
-                    log[metric.__name__] = result['metrics'][i]
+                log = {'epoch': epoch}
                 for key, value in result.items():
-                    if key != 'loss' and key != 'metrics':
+                    if key == 'metrics':
+                        for i, metric in enumerate(self.metrics):
+                            log[metric.__name__] = result['metrics'][i]
+                    elif key == 'val_metrics':
+                        for i, metric in enumerate(self.metrics):
+                            log['val_'+metric.__name__] = result['val_metrics'][i]
+                    else:
                         log[key] = value
                 self.logger.add_entry(log)
                 if self.verbosity >= 1:
@@ -64,7 +64,7 @@ class BaseTrainer:
         print("Saving checkpoint: {} ...".format(filename))
         torch.save(state, filename)
         if loss == self.min_loss:
-            shutil.copyfile(filename, os.path.join(self.save_dir, self.identifier + 'best.pth.tar'))
+            shutil.copyfile(filename, os.path.join(self.save_dir, 'model_best.pth.tar'))
 
     def _resume_checkpoint(self, resume_path):
         print("Loading checkpoint: {} ...".format(resume_path))
@@ -73,4 +73,5 @@ class BaseTrainer:
         self.min_loss = checkpoint['min_loss']
         self.model.load_state_dict(checkpoint['state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
+        self.logger = checkpoint['logger']
         print("Checkpoint '{}' (epoch {}) loaded".format(resume_path, self.start_epoch))
