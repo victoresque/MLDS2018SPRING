@@ -16,7 +16,9 @@ class BaseModel(nn.Module):
     def forward(self, x):
         raise NotImplementedError
 
-    def summary(self):
+    def summary(self, show_structure=True):
         model_parameters = filter(lambda p: p.requires_grad, self.parameters())
         params = sum([np.prod(p.size()) for p in model_parameters])
         print('Trainable parameters:', params)
+        
+        if show_structure: print(self)

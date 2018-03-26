@@ -10,6 +10,7 @@ class FunctionDataLoader(BaseDataLoader):
         self.batch_size = batch_size
         self.n_batch = n_sample // batch_size
         self.x_range = x_range
+        self.shuffle = shuffle
         if target_func == 'sin':
             self.target_func = lambda x: np.sin(4*np.pi*x)
         elif target_func == 'sinc':
@@ -23,16 +24,16 @@ class FunctionDataLoader(BaseDataLoader):
         self.x = np.array([i for i in np.linspace(self.x_range[0], self.x_range[1],
                                                   self.n_batch * self.batch_size)])
         self.y = np.array([self.target_func(i) for i in self.x])
-        if shuffle:
-            rand_idx = np.random.permutation(len(self.x))
-            self.x = np.array([self.x[i] for i in rand_idx])
-            self.y = np.array([self.y[i] for i in rand_idx])
         self.batch_idx = 0
 
     def __iter__(self):
         self.n_batch = len(self.x) // self.batch_size
         self.batch_idx = 0
         assert self.n_batch > 0
+         if shuffle:
+            rand_idx = np.random.permutation(len(self.x))
+            self.x = np.array([self.x[i] for i in rand_idx])
+            self.y = np.array([self.y[i] for i in rand_idx])
         return self
 
     def __next__(self):

@@ -1,5 +1,22 @@
 
 class Logger:
+    """
+    Logger class record the training feature at each training epoch.
+    
+    example:
+    
+    logger.entries = { 
+                       1 :{
+                           epoch:    [1, 2, 3, ...],
+                           accuracy: [0.1, 0.1, 0.1, ...]
+                          }
+                       2 :{
+                           epoch:    [1, 2, 3, ...],
+                           accuracy: [0.1, 0.1, 0.1, ...]
+                          }
+                       ...
+                     } 
+    """
     def __init__(self):
         self.entries = {}
 

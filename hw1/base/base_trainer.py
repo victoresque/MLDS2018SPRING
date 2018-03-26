@@ -6,6 +6,24 @@ from utils.util import ensure_dir
 
 
 class BaseTrainer:
+    """
+    TODO: not implement early_stop
+    This class manage training process and handling saving checkpoint and resuming from checkpoint
+    
+    checkpoint object:{
+                        'epoch':      <class 'int'>,                    # The number of the checkpoint epoch
+                        'logger':     <class logger>,                   # From logger.logger which containing training process information
+                        'arch':       <class 'str'>,                    # type(self.model).__name__
+                        'state_dict': <class 'collections.OrderedDict'> # The weight of the model 
+                                                                          save by self.model.state_dict()
+                                                                          recover by model.load_state_dict(object['state_dict'])
+                        
+                        'optimizer':  <class 'dict'>                    # Save by self.optimizer.state_dict()
+                                                                        # recover by optimizer.load_state_dict(object['optimizer'])
+                        
+                        'min_loss':   <class 'float'>                   # Current minimun loss
+                      }
+    """
     def __init__(self, model, loss, metrics, optimizer, epochs,
                  save_dir, save_freq, resume, verbosity, identifier='', logger=None):
         self.model = model
@@ -45,6 +63,14 @@ class BaseTrainer:
                 self._save_checkpoint(epoch, result['loss'])
 
     def _train_epoch(self, epoch):
+        """
+        return log = {
+                        'loss':         avg_loss,
+                        'metrics':      avg_metrics,
+                        'grad_norm':    grad_norm,
+                        ...
+                     }
+        """
         raise NotImplementedError
 
     def _save_checkpoint(self, epoch, loss):
@@ -75,3 +101,6 @@ class BaseTrainer:
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         self.logger = checkpoint['logger']
         print("Checkpoint '{}' (epoch {}) loaded".format(resume_path, self.start_epoch))
+        
+    def _early_stop(self):
+        pass

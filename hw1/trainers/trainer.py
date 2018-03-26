@@ -13,7 +13,7 @@ class Trainer(BaseTrainer):
         self.batch_size = data_loader.batch_size
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
-        self.valid = True if self.valid_data_loader else False
+        self.valid = True if self.valid_data_loader is not None else False
         self.with_cuda = with_cuda
         self.save_grad = save_grad
 
