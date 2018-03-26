@@ -30,7 +30,7 @@ class FunctionDataLoader(BaseDataLoader):
         self.n_batch = len(self.x) // self.batch_size
         self.batch_idx = 0
         assert self.n_batch > 0
-         if shuffle:
+        if self.shuffle:
             rand_idx = np.random.permutation(len(self.x))
             self.x = np.array([self.x[i] for i in rand_idx])
             self.y = np.array([self.y[i] for i in rand_idx])

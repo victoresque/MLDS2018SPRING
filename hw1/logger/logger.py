@@ -7,12 +7,14 @@ class Logger:
     
     logger.entries = { 
                        1 :{
-                           epoch:    [1, 2, 3, ...],
-                           accuracy: [0.1, 0.1, 0.1, ...]
+                           'epoch':    1,
+                           'accuracy': 0.1,
+                           'loss':     inf
                           }
                        2 :{
-                           epoch:    [1, 2, 3, ...],
-                           accuracy: [0.1, 0.1, 0.1, ...]
+                           'epoch':    2,
+                           'accuracy': 0.1,
+                           'loss':     inf
                           }
                        ...
                      } 
