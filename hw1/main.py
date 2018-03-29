@@ -1,8 +1,8 @@
 import argparse
 import torch.optim as optim
 from models.models import DeepFC, MiddleFC, ShallowFC
-from models.models import DeepMnistCNN, MiddleMnistCNN, ShallowMnistCNN
-from models.models import DeepCifarCNN, MiddleCifarCNN, ShallowCifarCNN
+from models.models import DeepMnistCNN, MiddleMnistCNN, ShallowMnistCNN, DeeperMnistCNN
+from models.models import DeepCifarCNN, MiddleCifarCNN, ShallowCifarCNN, DeeperCifarCNN
 from models.loss import mse_loss, cross_entropy_loss
 from models.metric import accuracy
 from data_loader.function_data_loader import FunctionDataLoader
@@ -39,6 +39,8 @@ parser.add_argument('--arch', default='deep', type=str,
                     help='model architecture [deep, middle, shallow] (default: deep)')
 parser.add_argument('--save-grad', action="store_true",
                     help='saving average gradient norm for HW1-2')
+parser.add_argument('--rand-label', action="store_true",
+                    help='shuffle all labels for HW1-3')
 
 
 def main(args):
@@ -47,7 +49,8 @@ def main(args):
         loss = cross_entropy_loss
         metrics = [accuracy]
         model = eval(args.arch.title() + args.dataset.title() + 'CNN')()
-        data_loader = eval(args.dataset.title() + 'Loader')(args.batch_size)
+        data_loader = eval(args.dataset.title() + 'Loader')(args.batch_size,
+                                                            args.rand_label)
         identifier = type(model).__name__ + '_' + args.dataset + '_'
     else:
         loss = mse_loss

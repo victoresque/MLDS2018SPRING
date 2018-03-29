@@ -6,3 +6,4 @@ datasets/
 results/
 ref/
 *ipynb*
+*.json

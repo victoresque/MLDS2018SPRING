@@ -65,6 +65,39 @@ class ShallowFC(BaseModel):
         return output
 
 
+class DeeperMnistCNN(BaseModel):
+    def __init__(self):
+        super(DeeperMnistCNN, self).__init__()
+        self.cnn = None
+        self.fc = None
+        self.build_model()
+
+    def build_model(self):
+        self.cnn = nn.Sequential(
+            # 28x28
+            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, stride=2),
+            # 14x14
+            nn.Conv2d(32, 64, kernel_size=3),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, stride=2),
+            # 6x6
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, stride=2),
+            # 3x3
+        )
+        self.fc = nn.Sequential(
+            nn.Linear(64 * 3 * 3, 10),
+        )
+
+    def forward(self, x):
+        output = self.cnn(x)
+        output = output.view(output.size()[0], -1)
+        return self.fc(output)
+
+
 class DeepMnistCNN(BaseModel):
     def __init__(self):
         super(DeepMnistCNN, self).__init__()
@@ -144,6 +177,39 @@ class ShallowMnistCNN(BaseModel):
         )
         self.fc = nn.Sequential(
             nn.Linear(4 * 13 * 13, 10),
+        )
+
+    def forward(self, x):
+        output = self.cnn(x)
+        output = output.view(output.size()[0], -1)
+        return self.fc(output)
+
+
+class DeeperCifarCNN(BaseModel):
+    def __init__(self):
+        super(DeeperCifarCNN, self).__init__()
+        self.cnn = None
+        self.fc = None
+        self.build_model()
+
+    def build_model(self):
+        self.cnn = nn.Sequential(
+            # 32x32
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, stride=2),
+            # 16x16
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, stride=2),
+            # 8x8
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, stride=2),
+            # 4x4
+        )
+        self.fc = nn.Sequential(
+            nn.Linear(64 * 4 * 4, 10)
         )
 
     def forward(self, x):

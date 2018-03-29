@@ -50,6 +50,7 @@
               --dataset mnist --arch deep --save-dir models/saved/1-2-1/[1-8]
        ```
     2. Training for visualizing gradient norm
+
        (1) MNIST
           ```
           python main.py --batch-size 256 --epochs 10000 --save-freq 200 \
@@ -60,7 +61,18 @@
           python main.py --batch-size 128 --epochs 10000 --save-freq 200 \
                   --arch deep --save-grad
           ```
-    3. 
+    3. What happens when gradient norm is almost zero?
+
+       run ```vis/hw1_2/train_min_ratio.py``` first
+       ```
+       python train_min_ratio.py
+       ```
+
+       then run ```vis/hw1_2/plot_min_ratio.py``` for visualization
+       ```
+       python plot_min_ratio.py
+       ```
+
   * **Visualization**
     1. Visualizing dimensional reduced model parameters in training process
        ```
@@ -71,3 +83,11 @@
        python plot_grad_norm.py
        ```
 
+### 1-3 Generalization
+#### 1-3-1 Can network fit random labels?
+##### Training
+  * Run:
+    ```
+    python main.py --batch-size 256 --epochs 500 --save-freq 20 \
+              --dataset mnist --arch deeper --rand-label --validation-split 0.1
+    ```

@@ -5,7 +5,7 @@ from base.base_data_loader import BaseDataLoader
 
 
 class MnistLoader(BaseDataLoader):
-    def __init__(self, batch_size):
+    def __init__(self, batch_size, rand_label=False):
         super(MnistLoader, self).__init__(batch_size)
         self.data_loader = torch.utils.data.DataLoader(
             datasets.MNIST('../data', train=True, download=True,
@@ -20,6 +20,8 @@ class MnistLoader(BaseDataLoader):
             self.y += [i for i in target.numpy()]
         self.x = np.array(self.x)
         self.y = np.array(self.y)
+        if rand_label:
+            np.random.shuffle(self.y)
         self.n_batch = len(self.x) // self.batch_size
         self.batch_idx = 0
 
@@ -39,11 +41,12 @@ class MnistLoader(BaseDataLoader):
             raise StopIteration
 
     def __len__(self):
+        self.n_batch = len(self.x) // self.batch_size
         return self.n_batch
 
 
 class CifarLoader(BaseDataLoader):
-    def __init__(self, batch_size):
+    def __init__(self, batch_size, rand_label=False):
         super(CifarLoader, self).__init__(batch_size)
         self.data_loader = torch.utils.data.DataLoader(
             datasets.CIFAR10('../data', train=True, download=True,
@@ -59,6 +62,8 @@ class CifarLoader(BaseDataLoader):
             self.y += [i for i in target.numpy()]
         self.x = np.array(self.x)
         self.y = np.array(self.y)
+        if rand_label:
+            np.random.shuffle(self.y)
         self.n_batch = len(self.x) // self.batch_size
         self.batch_idx = 0
 
@@ -78,4 +83,5 @@ class CifarLoader(BaseDataLoader):
             raise StopIteration
 
     def __len__(self):
+        self.n_batch = len(self.x) // self.batch_size
         return self.n_batch
