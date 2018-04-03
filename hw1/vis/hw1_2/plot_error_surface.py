@@ -16,7 +16,27 @@ matplotlib.use('agg')
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from matplotlib.ticker import LinearLocator, FormatStrFormatter
+from mpl_toolkits.mplot3d.proj3d import proj_transform
+from matplotlib.text import Annotation
+
+class Annotation3D(Annotation):
+    '''Annotate the point xyz with text s'''
+
+    def __init__(self, s, xyz, *args, **kwargs):
+        Annotation.__init__(self,s, xy=(0,0), *args, **kwargs)
+        self._verts3d = xyz        
+
+    def draw(self, renderer):
+        xs3d, ys3d, zs3d = self._verts3d
+        xs, ys, zs = proj_transform(xs3d, ys3d, zs3d, renderer.M)
+        self.xy=(xs,ys)
+        Annotation.draw(self, renderer)
+
+def annotate3D(ax, s, *args, **kwargs):
+    '''add anotation text s to to Axes3d ax'''
+
+    tag = Annotation3D(s, *args, **kwargs)
+    ax.add_artist(tag)
 
 def main():
     parser = argparse.ArgumentParser(description='plot error surface')
@@ -38,7 +58,6 @@ def main():
     state = {
                 1: {
                      'state_dict': < OrderedDict >,
-                     'loss':       < float >,
                      'epoch':
                    }
             }
@@ -86,7 +105,12 @@ def main():
     checkpoint_weight_vectors = np.array(checkpoint_weight_vectors)
     std_dev_at_dim = np.std(checkpoint_weight_vectors, axis=0)
     weight_length = model_weight_length(model_name)
-    assert(std_dev_at_dim.shape[0] == weight_length)
+    try:
+        assert(std_dev_at_dim.shape[0] == weight_length)
+    except:
+        print("ASSERTION ERROR assert(std_dev_at_dim.shape[0] == weight_length)")
+        print(std_dev_at_dim.shape, weight_length)
+        return
     
 
     # shape = (epochs*n_sample, weight_length)
@@ -137,7 +161,7 @@ def main():
             all_loss.append(avg_loss)
         sys.stdout.write("({}) loss = {}".format(i+1, avg_loss))
         sys.stdout.flush()
-    print('')
+    print('\n')
     tsne_projection = np.array(tsne_projection)
     all_loss = np.array(all_loss)
     assert(tsne_projection.shape[0] == all_loss.shape[0])
@@ -164,21 +188,27 @@ def main():
     
     
     fig = plt.figure(figsize=(24,12))
+    surface_cmap = 'coolwarm'
+    plot_color = 'purple'
+    cmap = cm.get_cmap(surface_cmap)
         
     # subplot 1
-    ax1 = fig.add_subplot(2, 3, 2, projection='3d')
-    ax1.plot_trisurf(x, y, np.log10(z), linewidth=0.2, antialiased=True, alpha=0.8)
-    ax1.plot(x_check, y_check, np.log10(z_check), color='purple', linewidth=3, alpha=1)
+    ax1 = fig.add_subplot(2, 3, 1, projection='3d')
+    p1 = ax1.scatter(x, y, np.log10(z), c=z, cmap=cmap, alpha=0.6)
+    ax1.plot(x_check, y_check, np.log10(z_check), color=plot_color, linewidth=3, alpha=1)
     ax1.set_zticks([])
-    ax1.set_title('error surface # loss(z) in log scale')
+    ax1.set_title('loss sample # loss(z) in log scale')
+    ax1.text(x_check[-1], y_check[-1], np.log10(z_check[-1]), 'END', color='black', fontsize=10) 
+    fig.colorbar(p1)
     
     # subplot 2
-    ax2 = fig.add_subplot(2, 3, 1, projection='3d')
-    p2 = ax2.scatter(x, y, np.log10(z), c=z, cmap=cmap, alpha=0.6)
-    ax2.plot(x_check, y_check, np.log10(z_check), color='purple', linewidth=3, alpha=1)
+    ax2 = fig.add_subplot(2, 3, 2, projection='3d')
+    ax2.plot_trisurf(x, y, np.log10(z), linewidth=0.2, antialiased=True, alpha=1.0, cmap=surface_cmap)
+    ax2.plot(x_check, y_check, np.log10(z_check), color=plot_color, linewidth=3, alpha=1)
+    ax2.text(x_check[-1], y_check[-1], np.log10(z_check[-1]), 'END', color='black', fontsize=10)
     ax2.set_zticks([])
-    ax2.set_title('loss sample # loss(z) in log scale')
-    fig.colorbar(p2)
+    ax2.set_title('error surface # loss(z) in log scale')
+
     
     # subplot 3
     ax3 = fig.add_subplot(2, 3, 3)
@@ -189,17 +219,20 @@ def main():
     ax3.grid()
     
     # subplot 4
-    ax4 = fig.add_subplot(2, 3, 5, projection='3d')
-    ax4.plot_trisurf(x, y, z, linewidth=0.2, antialiased=True, alpha=0.8)
-    ax4.plot(x_check, y_check, z_check, color='purple', linewidth=3, alpha=1)
-    ax4.set_title('error surface')
+    ax4 = fig.add_subplot(2, 3, 4, projection='3d')
+    p4 = ax4.scatter(x, y, z, c=z, cmap=cmap, alpha=0.6)
+    ax4.plot(x_check, y_check, z_check, color=plot_color, linewidth=3, alpha=1)
+    ax4.text(x_check[-1], y_check[-1], z_check[-1], 'END', color='black', fontsize=10)
+    ax4.set_title('loss sample')
+    fig.colorbar(p4)
     
     # subplot 5
-    ax5 = fig.add_subplot(2, 3, 4, projection='3d')
-    p5 = ax5.scatter(x, y, z, c=z, cmap=cmap, alpha=0.6)
-    ax5.plot(x_check, y_check, z_check, color='purple', linewidth=3, alpha=1)
-    ax5.set_title('loss sample')
-    fig.colorbar(p5)
+    ax5 = fig.add_subplot(2, 3, 5, projection='3d')
+    ax5.plot_trisurf(x, y, z, linewidth=0.2, antialiased=True, alpha=1.0, cmap=surface_cmap)
+    ax5.plot(x_check, y_check, z_check, color=plot_color, linewidth=3, alpha=1)
+    ax5.text(x_check[-1], y_check[-1], z_check[-1], 'END', color='black', fontsize=10)
+    ax5.set_title('error surface')
+    
         
     # subplot 6
     ax6 = fig.add_subplot(2, 3, 6)
@@ -213,21 +246,26 @@ def main():
     save_file_path = './{}{}_error_surface_sample{}.png'.format(args.arch, args.dataset, args.sample)
     plt.savefig(save_file_path)
     print("Saving file : {}".format(save_file_path))
-
-    
+    for idx, checkpoint_coord in enumerate(list(zip(x_check, y_check))):
+        if idx % 10 == 0:
+            print(checkpoint_coord)
     
 # From state_dict to 1-D np.array
+# cum_idx acts like counter
 def orderdict_flatten(orderdict):
     flat_vec = []
     for key, value in orderdict.items():
         sz = np.array(value.size())
-        if len(sz) == 2:
-            for i in range(sz[0]):
-                for j in range(sz[1]):
-                    flat_vec.append(value[i,j])
-        else:
-            for i in range(sz[0]):
-                flat_vec.append(value[i])
+        sz_idx = sz - 1
+        cum_idx = np.zeros(len(sz)).astype(np.int16)
+        while cum_idx[0] < sz[0]:
+            flat_vec.append(value[tuple(cum_idx)])
+            cum_idx[-1] += 1
+            for i in range(len(sz)-1, 0, -1):
+                if cum_idx[i] == sz[i]:
+                    cum_idx[i-1] += 1
+                    cum_idx[i] = 0
+                    
     return np.array(flat_vec)
 
 
@@ -305,7 +343,7 @@ def generate_iterpolation_loss(checkpoint_epochs, checkpoint_weight_vectors, mod
             all_loss.append(avg_loss)
         sys.stdout.write("({}) loss = {}".format(i+1, avg_loss))
         sys.stdout.flush()
-    print("")
+    print('\n')
     return np.linspace(1,10000, len(all_loss)), np.array(all_loss)
     
     
