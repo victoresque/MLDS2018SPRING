@@ -48,10 +48,14 @@ def main(args):
     if args.dataset != 'func':
         loss = cross_entropy_loss
         metrics = [accuracy]
-        model = eval(args.arch.title() + args.dataset.title() + 'CNN')()
+        if args.arch[:6] == 'deeper':
+            model = eval(args.arch[:6].title() + args.dataset.title() + 'CNN')(int(args.arch[6:]))
+            identifier = type(model).__name__ + args.arch[6:] + '_' + args.dataset + '_'
+        else:
+            model = eval(args.arch.title() + args.dataset.title() + 'CNN')()
+            identifier = type(model).__name__ + '_' + args.dataset + '_'
         data_loader = eval(args.dataset.title() + 'Loader')(args.batch_size,
                                                             args.rand_label)
-        identifier = type(model).__name__ + '_' + args.dataset + '_'
     else:
         loss = mse_loss
         metrics = []

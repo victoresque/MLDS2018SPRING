@@ -86,8 +86,13 @@
 ### 1-3 Generalization
 #### 1-3-1 Can network fit random labels?
 ##### Training
-  * Run:
-    ```
-    python main.py --batch-size 256 --epochs 500 --save-freq 20 \
-              --dataset mnist --arch deeper --rand-label --validation-split 0.1
-    ```
+```
+python main.py --batch-size 128 --epochs 500 --save-freq 500 \
+          --dataset mnist --arch deeper64 --rand-label --validation-split 0.1 --save-dir models/saved/1-3-1
+```
+
+#### 1-3-2 Number of parameters v.s. Generalization
+##### Training
+```
+python train_different_parameters.py
+```
