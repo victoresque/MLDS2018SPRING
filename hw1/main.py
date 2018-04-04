@@ -34,7 +34,7 @@ parser.add_argument('--no-cuda', action="store_true",
 parser.add_argument('--dataset', default='func', type=str,
                     help='training data [mnist, cifar, func] (default: func)')
 parser.add_argument('--target-func', default='sinc', type=str,
-                    help='target function [sin, sinc, stair, damp] (default: sinc)')
+                    help='target function [sin, sinc, stair, damp, square] (default: sinc)')
 parser.add_argument('--arch', default='deep', type=str,
                     help='model architecture [deep, middle, shallow] (default: deep)')
 parser.add_argument('--save-grad', action="store_true",
