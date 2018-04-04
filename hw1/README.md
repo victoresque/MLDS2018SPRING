@@ -41,14 +41,18 @@
 
 ### 1-1-1 Simulate a function
   * **Training**
+
     **Choose one argument in [...] list**
     ```
     python main.py --batch-size 128 --epochs 20000 --save-freq 1000 \
         --target-func [damp, square] --arch [deep, middle, shallow] \
         --save-dir models/saved/1-1-1
     ```
+
   * **Visualization**
+
     **You may need to edit checkpoint paths in these scripts**
+
     Plot loss-epoch:
     ```
     cd vis/hw1_1; python plot_loss_accuracy.py
@@ -59,6 +63,7 @@
     ```
 ### 1-1-2 Train on actual tasks
   * **Training**
+
     Train on MNIST
     ```
     python main.py --batch-size 128 --epochs 1000 --save-freq 100 \
@@ -72,7 +77,9 @@
         --save-dir models/saved/1-1-2
     ```
   * **Visualization**
+
     **You may need to edit checkpoint paths in these scripts**
+
     Plot loss-epoch and accuracy-epoch:
     ```
     cd vis/hw1_1; python plot_loss_accuracy.py
@@ -82,12 +89,14 @@
 
 ### 1-2-1 Visualize the optimization process
   * **Training**
+
     Training on MNIST
     ```
     python main.py --batch-size 128 --epochs 99 --save-freq 3 \
         --dataset mnist --arch deep --save-dir models/saved/1-2-1
     ```
   * **Visualization**
+
     **You may need to edit checkpoint paths in these scripts**
     ```
     cd vis/hw1_2; python plot_param_pca.py
@@ -101,6 +110,7 @@
         --save-dir models/saved/1-2-2
     ```
   * **Visualization**
+
     **You may need to edit checkpoint paths in these scripts**
     ```
     cd vis/hw1_2; python plot_grad_norm.py
@@ -132,6 +142,7 @@
         --save-dir models/saved/1-3-1
     ```
   * **Visualization**
+  
     **You may need to edit checkpoint paths in these scripts**
     ```
     cd vis/hw1_3; python plot_random_label.py
