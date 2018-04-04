@@ -47,9 +47,9 @@ class MiddleFC(BaseModel):
             nn.ReLU(inplace=True),
             nn.Linear(20, 17),
             nn.ReLU(inplace=True),
-            nn.Linear(17, 4)
+            nn.Linear(17, 4),
             nn.ReLU(inplace=True),
-            nn.Linear(4, 1),
+            nn.Linear(4, 1)
         )
 
     def forward(self, x):
