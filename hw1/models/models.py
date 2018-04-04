@@ -19,7 +19,13 @@ class DeepFC(BaseModel):
             nn.ReLU(inplace=True),
             nn.Linear(10, 10),
             nn.ReLU(inplace=True),
-            nn.Linear(10, 1)
+            nn.Linear(10, 10),
+            nn.ReLU(inplace=True),
+            nn.Linear(10, 10),
+            nn.ReLU(inplace=True),
+            nn.Linear(10, 5),
+            nn.ReLU(inplace=True),
+            nn.Linear(5, 1)
         )
 
     def forward(self, x):
@@ -35,11 +41,15 @@ class MiddleFC(BaseModel):
 
     def build_model(self):
         self.fc = nn.Sequential(
-            nn.Linear(1, 17),
+            nn.Linear(1, 8),
             nn.ReLU(inplace=True),
-            nn.Linear(17, 17),
+            nn.Linear(8, 20),
             nn.ReLU(inplace=True),
-            nn.Linear(17, 1)
+            nn.Linear(20, 17),
+            nn.ReLU(inplace=True),
+            nn.Linear(17, 4)
+            nn.ReLU(inplace=True),
+            nn.Linear(4, 1),
         )
 
     def forward(self, x):
@@ -55,9 +65,9 @@ class ShallowFC(BaseModel):
 
     def build_model(self):
         self.fc = nn.Sequential(
-            nn.Linear(1, 120),
+            nn.Linear(1, 210),
             nn.ReLU(inplace=True),
-            nn.Linear(120, 1)
+            nn.Linear(210, 1)
         )
 
     def forward(self, x):
