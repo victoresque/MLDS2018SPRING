@@ -1,14 +1,5 @@
 # HW1
 
-## Requirements
-  * Python 3.6
-  * PyTorch 0.3
-  * torchvision
-  * scikit-learn 0.19.1
-  * matplotlib
-  * numpy
-  * MulticoreTSNE
----
 ## Table of Content
 
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
@@ -16,8 +7,8 @@
 <!-- code_chunk_output -->
 
 * [HW1](#hw1)
-	* [Requirements](#requirements)
 	* [Table of Content](#table-of-content)
+	* [Requirements](#requirements)
 	* [1-1 Deep vs. Shallow](#1-1-deep-vs-shallow)
 		* [1-1-1 Simulate a function](#1-1-1-simulate-a-function)
 		* [1-1-2 Train on actual tasks](#1-1-2-train-on-actual-tasks)
@@ -36,7 +27,15 @@
 
 <!-- /code_chunk_output -->
 
----
+## Requirements
+  * Python 3.6
+  * PyTorch 0.3
+  * torchvision
+  * scikit-learn 0.19.1
+  * matplotlib
+  * numpy
+  * MulticoreTSNE
+
 ## 1-1 Deep vs. Shallow
 
 ### 1-1-1 Simulate a function
