@@ -2,10 +2,12 @@ import torch
 import numpy as np
 from torchvision import datasets, transforms
 from base.base_data_loader import BaseDataLoader
-
+import random
+random.seed(1)
+import matplotlib.pyplot as plt
 
 class MnistLoader(BaseDataLoader):
-    def __init__(self, batch_size, rand_label=False):
+    def __init__(self, batch_size, rand_label=False, noise=False):
         super(MnistLoader, self).__init__(batch_size)
         self.data_loader = torch.utils.data.DataLoader(
             datasets.MNIST('../data', train=True, download=True,
@@ -22,6 +24,11 @@ class MnistLoader(BaseDataLoader):
         self.y = np.array(self.y)
         if rand_label:
             np.random.shuffle(self.y)
+        if noise:
+            mean, deviation = 0.0, 0.2 
+            noise = np.random.normal(mean,deviation,self.x.shape)
+            self.x = self.x + noise
+
         self.n_batch = len(self.x) // self.batch_size
         self.batch_idx = 0
 
@@ -46,7 +53,7 @@ class MnistLoader(BaseDataLoader):
 
 
 class CifarLoader(BaseDataLoader):
-    def __init__(self, batch_size, rand_label=False):
+    def __init__(self, batch_size, rand_label=False, noise=False):
         super(CifarLoader, self).__init__(batch_size)
         self.data_loader = torch.utils.data.DataLoader(
             datasets.CIFAR10('../data', train=True, download=True,
@@ -64,6 +71,10 @@ class CifarLoader(BaseDataLoader):
         self.y = np.array(self.y)
         if rand_label:
             np.random.shuffle(self.y)
+        if noise:
+            mean, deviation = 0.0, 0.2 
+            noise = np.random.normal(mean,deviation,self.x.shape)
+            self.x = self.x + noise
         self.n_batch = len(self.x) // self.batch_size
         self.batch_idx = 0
 

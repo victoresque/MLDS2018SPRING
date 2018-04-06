@@ -41,6 +41,8 @@ parser.add_argument('--save-grad', action="store_true",
                     help='saving average gradient norm for HW1-2')
 parser.add_argument('--rand-label', action="store_true",
                     help='shuffle all labels for HW1-3')
+parser.add_argument('--noise', action="store_true",
+                    help='add noise to task for HW1-3 bonus')
 
 
 def main(args):
@@ -55,7 +57,8 @@ def main(args):
             model = eval(args.arch.title() + args.dataset.title() + 'CNN')()
             identifier = type(model).__name__ + '_' + args.dataset + '_'
         data_loader = eval(args.dataset.title() + 'Loader')(args.batch_size,
-                                                            args.rand_label)
+                                                            args.rand_label,
+                                                            args.noise)
     else:
         loss = mse_loss
         metrics = []
