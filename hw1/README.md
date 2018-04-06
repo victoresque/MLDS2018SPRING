@@ -160,15 +160,19 @@
 ### 1-3-3 Flatness vs. Generalization
 
 #### 1-3-3-1 Visualize the lines between two training approaches
-  * **Training & Visualization**
+  * **Visualization**
     ```
     cd vis/hw1_3; python plot_interpolation.py
     ```
 
 #### 1-3-3-2 Visualize the sensitivities of different training approaches
-  * **Training & Visualization**
+  * **Visualization**
     ```
     cd vis/hw1_3; python plot_sensitivity.py
     ```
 
 #### 1-3-3-B Bonus: Evaluate a model's ability to generalize
+  * **Visualization**
+    ```
+    cd vis/hw1_3; python plot_sensitivity_bonus.py
+    ```
