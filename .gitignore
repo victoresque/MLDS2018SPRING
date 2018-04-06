@@ -8,3 +8,5 @@ ref/
 *ipynb*
 *.json
 *.pptx
+.DS_Store
+.DS_Store
