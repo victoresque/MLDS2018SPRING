@@ -8,7 +8,7 @@ from utils.util import split_validation
 from trainer.trainer import Trainer
 from logger.logger import Logger
 
-parser = argparse.ArgumentParser(description='PyTorch Template')
+parser = argparse.ArgumentParser(description='HW2 Training')
 parser.add_argument('-b', '--batch-size', default=32, type=int,
                     help='mini-batch size (default: 32)')
 parser.add_argument('-e', '--epochs', default=32, type=int,
@@ -17,8 +17,8 @@ parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('--verbosity', default=2, type=int,
                     help='verbosity, 0: quiet, 1: per epoch, 2: complete (default: 2)')
-parser.add_argument('--save-dir', default='model/saved', type=str,
-                    help='directory of saved model (default: model/saved)')
+parser.add_argument('--save-dir', default='saved/', type=str,
+                    help='directory of saved model (default: saved/)')
 parser.add_argument('--save-freq', default=1, type=int,
                     help='training checkpoint frequency (default: 1)')
 parser.add_argument('--data-dir', default='datasets', type=str,
@@ -26,7 +26,7 @@ parser.add_argument('--data-dir', default='datasets', type=str,
 parser.add_argument('--validation-split', default=0.1, type=float,
                     help='ratio of split validation data, [0.0, 1.0) (default: 0.0)')
 parser.add_argument('--no-cuda', action="store_true",
-                    help='use CPU in case there\'s no GPU support')
+                    help='use CPU instead of GPU')
 
 
 def main(args):

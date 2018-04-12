@@ -3,6 +3,10 @@ import torch
 import numpy as np
 from base.base_data_loader import BaseDataLoader
 
+# TODO: Dataset loading
+# TODO: Word embedding/One-hot encoding
+# TODO: Tokens (<PAD>, <BOS>, <EOS>, <UNK>, ...)
+
 
 class DataLoader(BaseDataLoader):
     def __init__(self, data_dir, batch_size):
