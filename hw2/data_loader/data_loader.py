@@ -5,14 +5,7 @@ from base.base_data_loader import BaseDataLoader
 
 
 class DataLoader(BaseDataLoader):
-    def __init__(self, data_dir, batch_size):
-        """
-        :param data_dir: Data directory
-        :param batch_size: Batch size used in __next__()
-
-        Note:
-            Modify __init__() to fit your data
-        """
+    def __init__(self, data_dir, batch_size, shuffle=True):
         super(DataLoader, self).__init__(batch_size)
         self.data_dir = data_dir
         self.x = []
@@ -21,11 +14,16 @@ class DataLoader(BaseDataLoader):
         self.y = np.array(self.y)
         self.n_batch = len(self.x) // self.batch_size
         self.batch_idx = 0
+        self.shuffle = shuffle
 
     def __iter__(self):
         self.n_batch = len(self.x) // self.batch_size
         self.batch_idx = 0
         assert self.n_batch > 0
+        if self.shuffle:
+            rand_idx = np.random.permutation(len(self.x))
+            self.x = np.array([self.x[i] for i in rand_idx])
+            self.y = np.array([self.y[i] for i in rand_idx])
         return self
 
     def __next__(self):
