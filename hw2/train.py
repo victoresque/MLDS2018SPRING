@@ -1,21 +1,21 @@
 import argparse
 import torch.optim as optim
-from model.model import Model
-from model.loss import my_loss
-from model.metric import my_metric, my_metric2
-from data_loader.data_loader import DataLoader
+from model.seq2seq import Seq2Seq
+from model.loss import cross_entropy
+from model.metric import bleu
+from data_loader.caption_data_loader import CaptionDataLoader
 from utils.util import split_validation
 from trainer.trainer import Trainer
 from logger.logger import Logger
 
 parser = argparse.ArgumentParser(description='HW2 Training')
-parser.add_argument('-b', '--batch-size', default=32, type=int,
+parser.add_argument('-b', '--batch-size', default=8, type=int,
                     help='mini-batch size (default: 32)')
-parser.add_argument('-e', '--epochs', default=32, type=int,
+parser.add_argument('-e', '--epochs', default=200, type=int,
                     help='number of total epochs (default: 32)')
 parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
-parser.add_argument('--verbosity', default=2, type=int,
+parser.add_argument('--verbosity', default=1, type=int,
                     help='verbosity, 0: quiet, 1: per epoch, 2: complete (default: 2)')
 parser.add_argument('--save-dir', default='saved/', type=str,
                     help='directory of saved model (default: saved/)')
@@ -27,29 +27,30 @@ parser.add_argument('--validation-split', default=0.1, type=float,
                     help='ratio of split validation data, [0.0, 1.0) (default: 0.0)')
 parser.add_argument('--no-cuda', action="store_true",
                     help='use CPU instead of GPU')
+# HW2 specific arguments
+parser.add_argument('--task', required=True,
+                    help='Specify the task to train [caption, chatbot]')
 
 
 def main(args):
-    # Model
-    model = Model()
+    if args.task.lower() == 'caption':
+        model = Seq2Seq
+        loss = cross_entropy
+        data_loader = CaptionDataLoader(args.data_dir, args.batch_size)
+        data_loader, valid_data_loader = split_validation(data_loader, args.validation_split)
+        metrics = [bleu]
+    else:
+        model = None
+        loss = None
+        data_loader = None
+        data_loader, valid_data_loader = split_validation(data_loader, args.validation_split)
+        metrics = []
+
     model.summary()
-
-    # A logger to store training process information
     logger = Logger()
+    optimizer = optim.RMSprop(model.parameters())
 
-    # Specifying loss function, metric(s), and optimizer
-    loss = my_loss
-    metrics = [my_metric, my_metric2]
-    optimizer = optim.Adam(model.parameters())
-
-    # Data loader and validation split
-    data_loader = DataLoader(args.data_dir, args.batch_size)
-    data_loader, valid_data_loader = split_validation(data_loader, args.validation_split)
-
-    # An identifier (prefix) for saved model
-    identifier = type(model).__name__ + '_'
-
-    # Trainer instance
+    identifier = args.task.title() + '_'
     trainer = Trainer(model, loss, metrics,
                       data_loader=data_loader,
                       valid_data_loader=valid_data_loader,
@@ -63,11 +64,7 @@ def main(args):
                       identifier=identifier,
                       with_cuda=not args.no_cuda)
 
-    # Start training!
     trainer.train()
-
-    # See training history
-    print(logger)
 
 
 if __name__ == '__main__':

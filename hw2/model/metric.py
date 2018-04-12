@@ -1,19 +1,24 @@
 import numpy as np
+from datasets.MLDS_hw2_1_data.bleu_eval import BLEU as BLEU_
 
 
-def my_metric(y_input, y_target):
-    assert len(y_input) == len(y_target)
-    correct = 0
-    for y0, y1 in zip(y_input, y_target):
-        if np.array_equal(y0, y1):
-            correct += 1
-    return correct / len(y_input)
+def bleu(y_input, y_target):
+    # Modified from bleu_eval.py
+    # TODO: modified to our format
+    """ Target Format:
 
-
-def my_metric2(y_input, y_target):
-    assert len(y_input) == len(y_target)
-    correct = 0
-    for y0, y1 in zip(y_input, y_target):
-        if np.array_equal(y0, y1):
-            correct += 1
-    return correct / len(y_input) * 2
+        test format:
+            [{'caption': ['...', '...'], 'id': '...'}, ...]
+        result format:
+            {video_id: caption, ...}
+    """
+    test = y_target
+    result = y_input
+    bleus = []
+    for item in test:
+        score_per_video = []
+        captions = [x.rstrip('.') for x in item['caption']]
+        score_per_video.append(BLEU_(result[item['id']], captions, True))
+        bleus.append(score_per_video[0])
+    average = sum(bleus) / len(bleus)
+    return average

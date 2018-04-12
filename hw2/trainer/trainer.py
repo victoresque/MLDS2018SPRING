@@ -3,14 +3,10 @@ import torch
 from torch.autograd import Variable
 from base.base_trainer import BaseTrainer
 
+# TODO: training process
+
 
 class Trainer(BaseTrainer):
-    """ Trainer class
-
-    Note:
-        Inherited from BaseTrainer.
-        Modify __init__() if you have additional arguments to pass.
-    """
     def __init__(self, model, loss, metrics, data_loader, optimizer, epochs,
                  save_dir, save_freq, resume, with_cuda, verbosity, identifier='',
                  valid_data_loader=None, logger=None):
@@ -42,12 +38,11 @@ class Trainer(BaseTrainer):
 
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
-        for batch_idx, (data, target) in enumerate(self.data_loader):
-            data, target = torch.FloatTensor(data), torch.LongTensor(target)
+        for batch_idx, (in_seq, out_seq, fmt) in enumerate(self.data_loader):
+            data, target = torch.FloatTensor(in_seq), torch.FloatTensor(out_seq)
             data, target = Variable(data), Variable(target)
             if self.with_cuda:
                 data, target = data.cuda(), target.cuda()
-
             self.optimizer.zero_grad()
             output = self.model(data)
             loss = self.loss(output, target)
