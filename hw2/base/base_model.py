@@ -15,7 +15,7 @@ class BaseModel(nn.Module):
         super(BaseModel, self).__init__()
         self.model = None
 
-    def build_model(self):
+    def _build_model(self):
         raise NotImplementedError
 
     def forward(self, x):

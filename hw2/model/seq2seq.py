@@ -1,30 +1,41 @@
-from base.base_model import BaseModel
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
+from base.base_model import BaseModel
+from model.modules import Encoder, Decoder
 
-# TODO: Use GRU/LSTM or GRUCell/LSTMCell?
-# TODO: Seq2Seq base encoder/decoder
+# TODO: Seq2Seq basic encoder/decoder
 # TODO: Bidirectional
 # TODO: Attention
 # TODO: Schedule sampling
-# TODO: Stacked attention
+# TODO: (Optional) Stacked attention
 # TODO: Teacher forcing
 # TODO: Beam search
+# DONE: Use GRU/LSTM or GRUCell/LSTMCell? --> Use GRU/LSTM
 
 
 class Seq2Seq(BaseModel):
-    def __init__(self):
+    def __init__(self, input_size=4096, hidden_size=256, output_size=1000, mode='GRU'):
         super(BaseModel, self).__init__()
-        self.encoder = None
-        self.decoder = None
-        self.build_model()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.output_size = output_size
+        self.mode = mode
+        self._build_model()
 
-    def build_model(self):
-        self.encoder = None
-        self.decoder = None
+    def _build_model(self):
+        self.encoder = Encoder(self.input_size, self.hidden_size, mode=self.mode)
+        self.decoder = Decoder(self.hidden_size, self.output_size, mode=self.mode)
+        self.enc_h0 = Variable(self.encoder.init_hidden())
+        self.dec_h0 = Variable(self.decoder.init_hidden())
 
-    def forward(self, x):
-        output = self.cnn(x)
-        output = output.view(output.size()[0], -1)
-        output = self.fc(output)
-        return F.log_softmax(output, dim=1)
+    def forward(self, in_seq):
+        if self.mode == 'GRU':
+            enc_out, hn = self.encoder(in_seq)
+        else:
+            enc_out, (hn, cn) = self.encoder(in_seq)
+        # TODO: check if this needs to be transposed
+        hn = hn.transpose(0, 1)
+        input()
+        output = self.decoder
+        return output

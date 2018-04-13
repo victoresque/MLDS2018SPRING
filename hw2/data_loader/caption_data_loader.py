@@ -51,10 +51,7 @@ class CaptionDataLoader(BaseDataLoader):
         self.batch_idx = 0
         assert self.n_batch > 0
         if self.shuffle:
-            rand_idx = np.random.permutation(len(self.in_seq))
-            self.in_seq = [self.in_seq[i] for i in rand_idx]
-            self.out_seq = [self.out_seq[i] for i in rand_idx]
-            self.formatted = [self.formatted[i] for i in rand_idx]
+            self.__shuffle_data()
         return self
 
     def __next__(self):
@@ -79,6 +76,23 @@ class CaptionDataLoader(BaseDataLoader):
         """
         self.n_batch = len(self.in_seq) // self.batch_size
         return self.n_batch
+
+    def __shuffle_data(self):
+        rand_idx = np.random.permutation(len(self.in_seq))
+        self.in_seq = [self.in_seq[i] for i in rand_idx]
+        self.out_seq = [self.out_seq[i] for i in rand_idx]
+        self.formatted = [self.formatted[i] for i in rand_idx]
+
+    # Pack/unpack for validation split
+    def split_validation(self, validation_split, shuffle=True):
+        valid_data_loader = copy(self)
+        if shuffle:
+            self.__shuffle_data()
+        split = int(len(self.in_seq) * validation_split)
+        valid_data_loader.in_seq = self.in_seq[:split]
+        valid_data_loader.out_seq = self.out_seq[:split]
+        valid_data_loader.formatted = self.formatted[:split]
+        return valid_data_loader
 
 
 def load_features(path):

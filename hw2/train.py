@@ -4,8 +4,7 @@ from model.seq2seq import Seq2Seq
 from model.loss import cross_entropy
 from model.metric import bleu
 from data_loader.caption_data_loader import CaptionDataLoader
-from utils.util import split_validation
-from trainer.trainer import Trainer
+from trainer.caption_trainer import CaptionTrainer
 from logger.logger import Logger
 
 parser = argparse.ArgumentParser(description='HW2 Training')
@@ -33,37 +32,37 @@ parser.add_argument('--task', required=True,
 
 
 def main(args):
+    logger = Logger()
+    identifier = args.task.title() + '_'
     if args.task.lower() == 'caption':
-        model = Seq2Seq
-        loss = cross_entropy
+        model = Seq2Seq()
         data_loader = CaptionDataLoader(args.data_dir, args.batch_size)
-        data_loader, valid_data_loader = split_validation(data_loader, args.validation_split)
+        valid_data_loader = data_loader.split_validation(args.validation_split)
+        optimizer = optim.RMSprop(model.parameters())
+        loss = cross_entropy
         metrics = [bleu]
+        trainer = CaptionTrainer(model, loss, metrics,
+                                 data_loader=data_loader,
+                                 valid_data_loader=valid_data_loader,
+                                 optimizer=optimizer,
+                                 epochs=args.epochs,
+                                 logger=logger,
+                                 save_dir=args.save_dir,
+                                 save_freq=args.save_freq,
+                                 resume=args.resume,
+                                 verbosity=args.verbosity,
+                                 identifier=identifier,
+                                 with_cuda=not args.no_cuda)
     else:
         model = None
-        loss = None
         data_loader = None
         data_loader, valid_data_loader = split_validation(data_loader, args.validation_split)
+        optimizer = None
+        loss = None
         metrics = []
+        trainer = None
 
     model.summary()
-    logger = Logger()
-    optimizer = optim.RMSprop(model.parameters())
-
-    identifier = args.task.title() + '_'
-    trainer = Trainer(model, loss, metrics,
-                      data_loader=data_loader,
-                      valid_data_loader=valid_data_loader,
-                      optimizer=optimizer,
-                      epochs=args.epochs,
-                      logger=logger,
-                      save_dir=args.save_dir,
-                      save_freq=args.save_freq,
-                      resume=args.resume,
-                      verbosity=args.verbosity,
-                      identifier=identifier,
-                      with_cuda=not args.no_cuda)
-
     trainer.train()
 
 

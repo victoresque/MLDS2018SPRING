@@ -38,6 +38,10 @@ class OneHot:
             encoded.append(np.array(line))
         return encoded
 
+    def decode_lines(self, lines):
+        # TODO: decode lines (onehot -> words)
+        pass
+
     def get_dictionary(self):
         return self.dictionary
 
