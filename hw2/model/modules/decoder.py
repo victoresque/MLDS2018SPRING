@@ -1,3 +1,4 @@
+from copy import copy
 import numpy as np
 import torch
 import torch.nn as nn
@@ -12,23 +13,20 @@ class Decoder(nn.Module):
         self.output_size = output_size
         self.mode = mode
         if mode.upper() == 'GRU':
-            self.rnn = nn.GRU(hidden_size, hidden_size, batch_first=False,
-                              num_layers=1, dropout=0, bidirectional=False)
+            self.rnn = nn.GRU(output_size, hidden_size, batch_first=False,
+                              num_layers=2, dropout=0., bidirectional=False)
         elif mode.upper() == 'LSTM':
-            self.rnn = nn.LSTM(hidden_size, hidden_size, batch_first=False,
-                               num_layers=1, dropout=0, bidirectional=False)
+            self.rnn = nn.LSTM(output_size, hidden_size, batch_first=False,
+                               num_layers=2, dropout=0., bidirectional=False)
         else:
             raise Exception('Unknown cell type: {}'.format(mode))
-        self.emb_in = nn.Linear(output_size, hidden_size)
+        self.emb_in = nn.Linear(output_size, output_size)
         self.emb_out = nn.Linear(hidden_size, output_size)
         self.max_length = max_length
         self.tokens = {'<PAD>': 0, '<BOS>': 1, '<EOS>': 2, '<UNK>': 3} \
             if tokens is None else tokens
 
     def forward(self, hidden):
-        # output = self.embedding(in_seq).view(1, 1, -1)
-        # output = F.relu(output)
-        # output, hidden = self.rnn(output, hidden)
         out_seq = []
 
         def onehot(dim, label):
@@ -51,12 +49,7 @@ class Decoder(nn.Module):
                 dec_out, (hidden, c) = self.rnn(dec_in, hidden)
                 hidden = (hidden, c)
             dec_out = self.emb_out(dec_out)
-            # _, topi = dec_out.data.topk(1)
-            # ni = topi[0].cpu().numpy()
-            # out_seq.append(ni)
             out_seq.append(dec_out[0])
-            dec_in = dec_out
-            # if ni == self.tokens['<EOS>']:
-            #     break
+            dec_in = copy(F.softmax(dec_out, 1))
 
         return out_seq

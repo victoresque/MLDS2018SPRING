@@ -9,10 +9,10 @@ class Encoder(nn.Module):
         self.mode = mode
         if mode.upper() == 'GRU':
             self.rnn = nn.GRU(input_size, hidden_size, batch_first=True,
-                              num_layers=1, dropout=0, bidirectional=False)
+                              num_layers=2, dropout=0., bidirectional=False)
         elif mode.upper() == 'LSTM':
             self.rnn = nn.LSTM(input_size, hidden_size, batch_first=True,
-                               num_layers=1, dropout=0, bidirectional=False)
+                               num_layers=2, dropout=0., bidirectional=False)
         else:
             raise Exception('Unknown cell type: {}'.format(mode))
 

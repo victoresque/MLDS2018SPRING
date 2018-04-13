@@ -45,6 +45,11 @@ class CaptionTrainer(BaseTrainer):
                 out_seq = dict((fmt[j]['id'], line) for j, line in enumerate(out_seq))
                 total_metrics[i] += metric(out_seq, fmt)
 
+            if batch_idx == 0:
+                for k, v in out_seq.items():
+                    print('{:30s}'.format(k), v)
+                print('')
+
             total_loss += loss.data[0]
             log_step = int(np.sqrt(self.batch_size))
             if self.verbosity >= 2 and batch_idx % log_step == 0:

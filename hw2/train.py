@@ -27,7 +27,7 @@ parser.add_argument('--validation-split', default=0.1, type=float,
 parser.add_argument('--no-cuda', action="store_true",
                     help='use CPU instead of GPU')
 # HW2 specific arguments
-parser.add_argument('--task', required=True,
+parser.add_argument('--task', required=True, type=str,
                     help='Specify the task to train [caption, chatbot]')
 
 
@@ -36,11 +36,11 @@ def main(args):
     identifier = args.task.title() + '_'
     if args.task.lower() == 'caption':
         model = Seq2Seq()
+
         data_loader = CaptionDataLoader(args.data_dir, args.batch_size)
         valid_data_loader = data_loader.split_validation(args.validation_split)
-        # optimizer = optim.Adam(model.parameters())
-        optimizer = optim.RMSprop(model.parameters(), lr=1e-4)
-        # optimizer = optim.SGD(model.parameters(), lr=1e-1, momentum=0.9)
+
+        optimizer = optim.RMSprop(model.parameters(), lr=1e-3)
         loss = cross_entropy
         metrics = [bleu]
         trainer = CaptionTrainer(model, loss, metrics,

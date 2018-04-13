@@ -6,7 +6,7 @@ class OneHot:
         self.word_list = ['<PAD>', '<BOS>', '<EOS>', '<UNK>']
         self.dictionary = dict((word, i) for i, word in enumerate(self.word_list))
         self.frequency = dict()
-        self.dict_size = 1000
+        self.dict_size = dict_size
         for line in corpus:
             line = line.replace('.', '').split()
             line = [word.lower() for word in line]
@@ -20,6 +20,7 @@ class OneHot:
         for word in frequency_sorted[:dict_size-token_count]:
             self.dictionary[word] = len(self.dictionary)
             self.word_list.append(word)
+        assert len(self.word_list) == dict_size
 
     def encode_word(self, word):
         return onehot(self.dict_size, self.dictionary[word])

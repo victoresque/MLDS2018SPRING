@@ -23,12 +23,13 @@ class CaptionDataLoader(BaseDataLoader):
         formatted:
             [{'caption': ['...', '...'], 'id': '...'}, ...]
     """
-    def __init__(self, data_dir, batch_size, shuffle=True):
+    def __init__(self, data_dir, batch_size, shuffle=True, mode='train'):
         super(CaptionDataLoader, self).__init__(batch_size)
+        self.mode = mode
         self.__parse_dataset(os.path.join(data_dir, 'MLDS_hw2_1_data'))
         self.n_batch = len(self.in_seq) // self.batch_size
         self.batch_idx = 0
-        self.shuffle = shuffle
+        self.shuffle = shuffle if mode == 'train' else False
 
     def __parse_dataset(self, base):
         self.video_ids = []
@@ -36,17 +37,25 @@ class CaptionDataLoader(BaseDataLoader):
         self.in_seq = []
         self.out_seq = []
         self.formatted = []
-        features = load_features(os.path.join(base, 'training_data/feat'))
-        labels = load_labels(os.path.join(base, 'training_label.json'))
+        if self.mode == 'train':
+            features = load_features(os.path.join(base, 'training_data/feat'))
+            labels = load_labels(os.path.join(base, 'training_label.json'))
+            corpus_labels = labels
+        else:
+            features = load_features(os.path.join(base, 'testing_data/feat'))
+            labels = load_labels(os.path.join(base, 'testing_label.json'))
+            corpus_labels = load_labels(os.path.join(base, 'training_label.json'))
         for video_id, feature in features.items():
             self.video_ids.append(video_id)
             self.in_seq.append(feature)
-            # self.out_seq.append(labels[video_id][0])
             self.out_seq.append(labels[video_id])
-            self.corpus.extend(labels[video_id])
+            # self.corpus.extend(labels[video_id])
             self.formatted.append({'caption': labels[video_id], 'id': video_id})
+
+        for video_id, captions in corpus_labels.items():
+            self.corpus.extend(captions)
+
         self.embedder = OneHot(self.corpus)
-        # self.out_seq = self.embedder.encode_lines(self.out_seq)
         self.out_seq = [self.embedder.encode_lines(seq) for seq in self.out_seq]
 
     def __iter__(self):
@@ -65,13 +74,16 @@ class CaptionDataLoader(BaseDataLoader):
                                          (self.batch_idx + 1) * self.batch_size]
             formatted_batch = self.formatted[self.batch_idx * self.batch_size:
                                              (self.batch_idx + 1) * self.batch_size]
-            # out_seq_batch = [random.choice(seq) for seq in out_seq_batch]
-            out_seq_batch = [seq[0] for seq in out_seq_batch]
+            out_seq_batch = [random.choice(seq) for seq in out_seq_batch]
+            # out_seq_batch = [seq[0] for seq in out_seq_batch]
             out_seq_batch = pad_batch(out_seq_batch,
                                       self.embedder.encode_word('<PAD>'),
                                       self.embedder.encode_word('<EOS>'))
             self.batch_idx = self.batch_idx + 1
-            return np.array(in_seq_batch), np.array(out_seq_batch), formatted_batch
+            if self.mode == 'train':
+                return np.array(in_seq_batch), np.array(out_seq_batch), formatted_batch
+            else:
+                return np.array(in_seq_batch), formatted_batch
         else:
             raise StopIteration
 
