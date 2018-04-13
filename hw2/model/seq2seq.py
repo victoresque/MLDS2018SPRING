@@ -26,8 +26,8 @@ class Seq2Seq(BaseModel):
     def _build_model(self):
         self.encoder = Encoder(self.input_size, self.hidden_size, mode=self.mode)
         self.decoder = Decoder(self.hidden_size, self.output_size, mode=self.mode)
-        self.enc_h0 = Variable(self.encoder.init_hidden())
-        self.dec_h0 = Variable(self.decoder.init_hidden())
+        # self.enc_h0 = Variable(self.encoder.init_hidden())
+        # self.dec_h0 = Variable(self.decoder.init_hidden())
 
     def forward(self, in_seq):
         if self.mode == 'GRU':
@@ -35,7 +35,6 @@ class Seq2Seq(BaseModel):
         else:
             enc_out, (hn, cn) = self.encoder(in_seq)
         # TODO: check if this needs to be transposed
-        hn = hn.transpose(0, 1)
-        input()
-        output = self.decoder
-        return output
+        # hn = hn.transpose(0, 1)
+        out_seq = self.decoder(hn)
+        return out_seq

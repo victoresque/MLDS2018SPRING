@@ -3,12 +3,8 @@ import numpy as np
 
 class OneHot:
     def __init__(self, corpus, dict_size=1000):
-        self.dictionary = {
-            '<PAD>': 0,
-            '<BOS>': 1,
-            '<EOS>': 2,
-            '<UNK>': 3
-        }
+        self.word_list = ['<PAD>', '<BOS>', '<EOS>', '<UNK>']
+        self.dictionary = dict((word, i) for i, word in enumerate(self.word_list))
         self.frequency = dict()
         self.dict_size = 1000
         for line in corpus:
@@ -23,6 +19,7 @@ class OneHot:
         token_count = len(self.dictionary)
         for word in frequency_sorted[:dict_size-token_count]:
             self.dictionary[word] = len(self.dictionary)
+            self.word_list.append(word)
 
     def encode_word(self, word):
         return onehot(self.dict_size, self.dictionary[word])
@@ -39,11 +36,12 @@ class OneHot:
         return encoded
 
     def decode_lines(self, lines):
-        # TODO: decode lines (onehot -> words)
-        pass
-
-    def get_dictionary(self):
-        return self.dictionary
+        decoded = []
+        for line in lines:
+            line = [self.word_list[int(np.argmax(vec, 0))] for vec in line]
+            line = ' '.join(line)
+            decoded.append(line)
+        return decoded
 
 
 def onehot(dim, label):

@@ -8,13 +8,13 @@ from trainer.caption_trainer import CaptionTrainer
 from logger.logger import Logger
 
 parser = argparse.ArgumentParser(description='HW2 Training')
-parser.add_argument('-b', '--batch-size', default=8, type=int,
+parser.add_argument('-b', '--batch-size', default=16, type=int,
                     help='mini-batch size (default: 32)')
 parser.add_argument('-e', '--epochs', default=200, type=int,
                     help='number of total epochs (default: 32)')
 parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
-parser.add_argument('--verbosity', default=1, type=int,
+parser.add_argument('--verbosity', default=2, type=int,
                     help='verbosity, 0: quiet, 1: per epoch, 2: complete (default: 2)')
 parser.add_argument('--save-dir', default='saved/', type=str,
                     help='directory of saved model (default: saved/)')
@@ -56,7 +56,7 @@ def main(args):
     else:
         model = None
         data_loader = None
-        data_loader, valid_data_loader = split_validation(data_loader, args.validation_split)
+        data_loader, valid_data_loader = None, None
         optimizer = None
         loss = None
         metrics = []

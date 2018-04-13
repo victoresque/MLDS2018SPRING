@@ -3,7 +3,6 @@ import torch
 from torch.autograd import Variable
 from base.base_trainer import BaseTrainer
 
-# TODO: check loss correctness
 # TODO: check metric correctness
 # Done: training process
 
@@ -28,7 +27,7 @@ class CaptionTrainer(BaseTrainer):
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, (in_seq, targ_seq, fmt) in enumerate(self.data_loader):
-            in_seq, targ_seq = torch.FloatTensor(in_seq), torch.FloatTensor(targ_seq)
+            in_seq, targ_seq = torch.FloatTensor(in_seq), torch.LongTensor(targ_seq)
             in_seq, targ_seq = Variable(in_seq), Variable(targ_seq)
             if self.with_cuda:
                 in_seq, targ_seq = in_seq.cuda(), targ_seq.cuda()
@@ -42,7 +41,7 @@ class CaptionTrainer(BaseTrainer):
             for i, metric in enumerate(self.metrics):
                 out_seq = out_seq.data.cpu().numpy()
                 out_seq = self.data_loader.embedder.decode_lines(out_seq)
-                out_seq = dict((fmt[i]['id'], line) for j, line in enumerate(out_seq))
+                out_seq = dict((fmt[j]['id'], line) for j, line in enumerate(out_seq))
                 total_metrics[i] += metric(out_seq, fmt)
 
             total_loss += loss.data[0]
@@ -67,7 +66,7 @@ class CaptionTrainer(BaseTrainer):
         total_val_loss = 0
         total_val_metrics = np.zeros(len(self.metrics))
         for batch_idx, (in_seq, targ_seq, fmt) in enumerate(self.valid_data_loader):
-            in_seq, targ_seq = torch.FloatTensor(in_seq), torch.FloatTensor(targ_seq)
+            in_seq, targ_seq = torch.FloatTensor(in_seq), torch.LongTensor(targ_seq)
             in_seq, targ_seq = Variable(in_seq), Variable(targ_seq)
             if self.with_cuda:
                 in_seq, targ_seq = in_seq.cuda(), targ_seq.cuda()
@@ -79,7 +78,7 @@ class CaptionTrainer(BaseTrainer):
             for i, metric in enumerate(self.metrics):
                 out_seq = out_seq.data.cpu().numpy()
                 out_seq = self.valid_data_loader.embedder.decode_lines(out_seq)
-                out_seq = dict((fmt[i]['id'], line) for j, line in enumerate(out_seq))
+                out_seq = dict((fmt[j]['id'], line) for j, line in enumerate(out_seq))
                 total_val_metrics[i] += metric(out_seq, fmt)
 
         avg_val_loss = total_val_loss / len(self.valid_data_loader)
