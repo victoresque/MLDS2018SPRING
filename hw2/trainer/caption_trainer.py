@@ -39,7 +39,8 @@ class CaptionTrainer(BaseTrainer):
             self.optimizer.step()
 
             for i, metric in enumerate(self.metrics):
-                out_seq = out_seq.data.cpu().numpy()
+                out_seq = np.array([seq.data.cpu().numpy() for seq in out_seq])
+                out_seq = np.transpose(out_seq, (1, 0, 2))
                 out_seq = self.data_loader.embedder.decode_lines(out_seq)
                 out_seq = dict((fmt[j]['id'], line) for j, line in enumerate(out_seq))
                 total_metrics[i] += metric(out_seq, fmt)
@@ -67,6 +68,7 @@ class CaptionTrainer(BaseTrainer):
         total_val_metrics = np.zeros(len(self.metrics))
         for batch_idx, (in_seq, targ_seq, fmt) in enumerate(self.valid_data_loader):
             in_seq, targ_seq = torch.FloatTensor(in_seq), torch.LongTensor(targ_seq)
+
             in_seq, targ_seq = Variable(in_seq), Variable(targ_seq)
             if self.with_cuda:
                 in_seq, targ_seq = in_seq.cuda(), targ_seq.cuda()
@@ -76,10 +78,16 @@ class CaptionTrainer(BaseTrainer):
             total_val_loss += loss.data[0]
 
             for i, metric in enumerate(self.metrics):
-                out_seq = out_seq.data.cpu().numpy()
-                out_seq = self.valid_data_loader.embedder.decode_lines(out_seq)
+                out_seq = np.array([seq.data.cpu().numpy() for seq in out_seq])
+                out_seq = np.transpose(out_seq, (1, 0, 2))
+                out_seq = self.data_loader.embedder.decode_lines(out_seq)
                 out_seq = dict((fmt[j]['id'], line) for j, line in enumerate(out_seq))
                 total_val_metrics[i] += metric(out_seq, fmt)
+
+            if batch_idx == 0:
+                for k, v in out_seq.items():
+                    print('{:30s}'.format(k), v)
+                print('')
 
         avg_val_loss = total_val_loss / len(self.valid_data_loader)
         avg_val_metrics = (total_val_metrics / len(self.valid_data_loader)).tolist()

@@ -46,15 +46,16 @@ class BaseTrainer:
                 self.logger.add_entry(log)
                 if self.verbosity >= 1:
                     print(log)
+            if result['loss'] < self.min_loss:
+                self.min_loss = result['loss']
+                self._save_checkpoint(epoch, result['loss'], save_best=True)
             if epoch % self.save_freq == 0:
                 self._save_checkpoint(epoch, result['loss'])
 
     def _train_epoch(self, epoch):
         raise NotImplementedError
 
-    def _save_checkpoint(self, epoch, loss):
-        if loss < self.min_loss:
-            self.min_loss = loss
+    def _save_checkpoint(self, epoch, loss, save_best=False):
         arch = type(self.model).__name__
         state = {
             'epoch': epoch,
@@ -66,10 +67,12 @@ class BaseTrainer:
         }
         filename = os.path.join(self.save_dir,
                                 self.identifier + 'checkpoint_epoch{:02d}_loss_{:.5f}.pth.tar'.format(epoch, loss))
-        print("Saving checkpoint: {} ...".format(filename))
         torch.save(state, filename)
-        if loss == self.min_loss:
-            shutil.copyfile(filename, os.path.join(self.save_dir, 'model_best.pth.tar'))
+        if save_best:
+            os.rename(filename, os.path.join(self.save_dir, 'model_best.pth.tar'))
+            print("Saving current best: {} ...".format('model_best.pth.tar'))
+        else:
+            print("Saving checkpoint: {} ...".format(filename))
 
     def _resume_checkpoint(self, resume_path):
         print("Loading checkpoint: {} ...".format(resume_path))

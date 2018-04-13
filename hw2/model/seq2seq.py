@@ -15,7 +15,7 @@ from model.modules import Encoder, Decoder
 
 
 class Seq2Seq(BaseModel):
-    def __init__(self, input_size=4096, hidden_size=256, output_size=1000, mode='GRU'):
+    def __init__(self, input_size=4096, hidden_size=512, output_size=1000, mode='GRU'):
         super(BaseModel, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -31,10 +31,8 @@ class Seq2Seq(BaseModel):
 
     def forward(self, in_seq):
         if self.mode == 'GRU':
-            enc_out, hn = self.encoder(in_seq)
+            enc_out, hidden = self.encoder(in_seq)
         else:
-            enc_out, (hn, cn) = self.encoder(in_seq)
-        # TODO: check if this needs to be transposed
-        # hn = hn.transpose(0, 1)
-        out_seq = self.decoder(hn)
+            enc_out, hidden = self.encoder(in_seq)
+        out_seq = self.decoder(hidden)
         return out_seq

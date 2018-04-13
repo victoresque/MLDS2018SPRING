@@ -8,17 +8,17 @@ from trainer.caption_trainer import CaptionTrainer
 from logger.logger import Logger
 
 parser = argparse.ArgumentParser(description='HW2 Training')
-parser.add_argument('-b', '--batch-size', default=16, type=int,
-                    help='mini-batch size (default: 32)')
-parser.add_argument('-e', '--epochs', default=200, type=int,
-                    help='number of total epochs (default: 32)')
+parser.add_argument('-b', '--batch-size', default=8, type=int,
+                    help='mini-batch size (default: 16)')
+parser.add_argument('-e', '--epochs', default=1000, type=int,
+                    help='number of total epochs (default: 1000)')
 parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
-parser.add_argument('--verbosity', default=2, type=int,
-                    help='verbosity, 0: quiet, 1: per epoch, 2: complete (default: 2)')
+parser.add_argument('--verbosity', default=1, type=int,
+                    help='verbosity, 0: quiet, 1: per epoch, 2: complete (default: 1)')
 parser.add_argument('--save-dir', default='saved/', type=str,
                     help='directory of saved model (default: saved/)')
-parser.add_argument('--save-freq', default=1, type=int,
+parser.add_argument('--save-freq', default=50, type=int,
                     help='training checkpoint frequency (default: 1)')
 parser.add_argument('--data-dir', default='datasets', type=str,
                     help='directory of training/testing data (default: datasets)')
@@ -38,7 +38,9 @@ def main(args):
         model = Seq2Seq()
         data_loader = CaptionDataLoader(args.data_dir, args.batch_size)
         valid_data_loader = data_loader.split_validation(args.validation_split)
-        optimizer = optim.RMSprop(model.parameters())
+        # optimizer = optim.Adam(model.parameters())
+        optimizer = optim.RMSprop(model.parameters(), lr=1e-4)
+        # optimizer = optim.SGD(model.parameters(), lr=1e-1, momentum=0.9)
         loss = cross_entropy
         metrics = [bleu]
         trainer = CaptionTrainer(model, loss, metrics,

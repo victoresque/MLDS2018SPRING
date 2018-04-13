@@ -1,5 +1,6 @@
 import os
 import json
+import random
 from copy import copy
 import numpy as np
 from base.base_data_loader import BaseDataLoader
@@ -40,11 +41,13 @@ class CaptionDataLoader(BaseDataLoader):
         for video_id, feature in features.items():
             self.video_ids.append(video_id)
             self.in_seq.append(feature)
-            self.out_seq.append(labels[video_id][0])
+            # self.out_seq.append(labels[video_id][0])
+            self.out_seq.append(labels[video_id])
             self.corpus.extend(labels[video_id])
             self.formatted.append({'caption': labels[video_id], 'id': video_id})
         self.embedder = OneHot(self.corpus)
-        self.out_seq = self.embedder.encode_lines(self.out_seq)
+        # self.out_seq = self.embedder.encode_lines(self.out_seq)
+        self.out_seq = [self.embedder.encode_lines(seq) for seq in self.out_seq]
 
     def __iter__(self):
         self.n_batch = len(self.in_seq) // self.batch_size
@@ -62,6 +65,8 @@ class CaptionDataLoader(BaseDataLoader):
                                          (self.batch_idx + 1) * self.batch_size]
             formatted_batch = self.formatted[self.batch_idx * self.batch_size:
                                              (self.batch_idx + 1) * self.batch_size]
+            # out_seq_batch = [random.choice(seq) for seq in out_seq_batch]
+            out_seq_batch = [seq[0] for seq in out_seq_batch]
             out_seq_batch = pad_batch(out_seq_batch,
                                       self.embedder.encode_word('<PAD>'),
                                       self.embedder.encode_word('<EOS>'))
@@ -92,6 +97,9 @@ class CaptionDataLoader(BaseDataLoader):
         valid_data_loader.in_seq = self.in_seq[:split]
         valid_data_loader.out_seq = self.out_seq[:split]
         valid_data_loader.formatted = self.formatted[:split]
+        self.in_seq = self.in_seq[split:]
+        self.out_seq = self.out_seq[split:]
+        self.formatted = self.formatted[split:]
         return valid_data_loader
 
 

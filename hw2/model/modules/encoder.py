@@ -17,8 +17,5 @@ class Encoder(nn.Module):
             raise Exception('Unknown cell type: {}'.format(mode))
 
     def forward(self, in_seq):
-        output, hc = self.rnn(in_seq)
-        return output, hc
-
-    def init_hidden(self):
-        return torch.zeros(1, 1, self.hidden_size)
+        output, hidden = self.rnn(in_seq)
+        return output, hidden
