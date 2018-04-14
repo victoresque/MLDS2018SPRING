@@ -4,10 +4,9 @@ import random
 from copy import copy
 import numpy as np
 from base.base_data_loader import BaseDataLoader
-from utils.preprocess import OneHot
+from preprocess.embedding import OneHot
 
-# TODO: (Optional) Word embedding by changing self.embedder
-# FIXME: Train only by the first label?
+# FIXME: (important) Train only by the first label?
 # DONE: Output sequence padding
 # DONE: One-hot encoding
 # DONE: Tokens (<PAD>, <BOS>, <EOS>, <UNK>, ...)

@@ -6,16 +6,16 @@ from model.modules import Encoder, Decoder
 
 # TODO: Bidirectional
 # TODO: Attention
-# TODO: Schedule sampling
-# TODO: (Optional) Stacked attention
+# TODO: Scheduled sampling
 # TODO: Teacher forcing
 # TODO: Beam search
+# TODO: (Optional) Stacked attention
 # DONE: Use GRU/LSTM or GRUCell/LSTMCell? --> Use GRU/LSTM
 # DONE: Seq2Seq basic encoder/decoder
 
 
 class Seq2Seq(BaseModel):
-    def __init__(self, input_size=4096, hidden_size=256, output_size=1000, mode='LSTM'):
+    def __init__(self, input_size=4096, hidden_size=64, output_size=1000, mode='LSTM'):
         super(BaseModel, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size

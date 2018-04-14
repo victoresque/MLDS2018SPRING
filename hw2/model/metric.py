@@ -4,7 +4,6 @@ from datasets.MLDS_hw2_1_data.bleu_eval import BLEU as BLEU_
 
 def bleu(y_output, y_target):
     # Modified from bleu_eval.py
-    # TODO: modified to our format
     """ Target Format:
 
         y_target:

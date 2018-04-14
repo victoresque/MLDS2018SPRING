@@ -3,9 +3,6 @@ import torch
 from torch.autograd import Variable
 from base.base_trainer import BaseTrainer
 
-# TODO: check metric correctness
-# Done: training process
-
 
 class CaptionTrainer(BaseTrainer):
     def __init__(self, model, loss, metrics, data_loader, optimizer, epochs,

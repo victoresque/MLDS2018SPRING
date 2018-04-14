@@ -13,14 +13,14 @@ class Decoder(nn.Module):
         self.output_size = output_size
         self.mode = mode
         if mode.upper() == 'GRU':
-            self.rnn = nn.GRU(output_size, hidden_size, batch_first=False,
+            self.rnn = nn.GRU(hidden_size, hidden_size, batch_first=False,
                               num_layers=2, dropout=0., bidirectional=False)
         elif mode.upper() == 'LSTM':
-            self.rnn = nn.LSTM(output_size, hidden_size, batch_first=False,
+            self.rnn = nn.LSTM(hidden_size, hidden_size, batch_first=False,
                                num_layers=2, dropout=0., bidirectional=False)
         else:
             raise Exception('Unknown cell type: {}'.format(mode))
-        self.emb_in = nn.Linear(output_size, output_size)
+        self.emb_in = nn.Linear(output_size, hidden_size)
         self.emb_out = nn.Linear(hidden_size, output_size)
         self.max_length = max_length
         self.tokens = {'<PAD>': 0, '<BOS>': 1, '<EOS>': 2, '<UNK>': 3} \

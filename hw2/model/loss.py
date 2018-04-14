@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-# TODO: check cross_entropy correctness
+# TODO: (important) check cross_entropy correctness
 
 
 def cross_entropy(y_input, y_target):

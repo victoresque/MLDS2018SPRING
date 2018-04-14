@@ -7,6 +7,22 @@ from data_loader.caption_data_loader import CaptionDataLoader
 from trainer.caption_trainer import CaptionTrainer
 from logger.logger import Logger
 
+# FIXME: loss function correctness
+# FIXME: training data (fixed label or random label)
+# FIXME: more information in checkpoint
+# FIXME: save state_dict or the full model?
+# FIXME: (optional) caption_data_loader shouldn't return 3 objects since it'll affect training process
+# TODO: (important) make sure the code is flexible enough to fit 2-1 and 2-2
+# TODO: (important) implement TODOs in seq2seq.py
+# TODO: control Seq2Seq parameters from arguments
+# TODO: create a base class for all embedders
+# TODO: folder structure (embedding.py -> preprocess/embedding.py)
+# TODO: check code clarity and readability
+# TODO: word embedding
+# TODO: make sure different enhancements of Seq2Seq can be toggled
+# NOTE: coding style should follow PEP8
+
+
 parser = argparse.ArgumentParser(description='HW2 Training')
 parser.add_argument('-b', '--batch-size', default=8, type=int,
                     help='mini-batch size (default: 16)')
