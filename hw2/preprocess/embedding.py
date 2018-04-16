@@ -42,8 +42,6 @@ class OneHot:
             line = [self.word_list[int(np.argmax(vec, 0))] for vec in line]
             line = ' '.join(line)
             line = line.split('<EOS>', 1)[0]
-            line = line.split('<PAD>', 1)[0]
-            line = line.split('<UNK>', 1)[0]
             line = line.split()
             if len(line) == 0:
                 line = ['a']

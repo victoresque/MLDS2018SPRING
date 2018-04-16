@@ -32,14 +32,16 @@ logging.basicConfig(level=logging.INFO, format='')
 
 
 parser = argparse.ArgumentParser(description='HW2 Training')
-parser.add_argument('-b', '--batch-size', default=8, type=int,
+parser.add_argument('-c', '--config', default='', type=str,
+                    help='config file path (default: none)')
+parser.add_argument('-b', '--batch-size', default=64, type=int,
                     help='mini-batch size (default: 16)')
 parser.add_argument('-e', '--epochs', default=1000, type=int,
                     help='number of total epochs (default: 1000)')
 parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
-parser.add_argument('--verbosity', default=1, type=int,
-                    help='verbosity, 0: quiet, 1: per epoch, 2: complete (default: 1)')
+parser.add_argument('--verbosity', default=2, type=int,
+                    help='verbosity, 0: quiet, 1: per epoch, 2: complete (default: 2)')
 parser.add_argument('--save-dir', default='saved/', type=str,
                     help='directory of saved model (default: saved/)')
 parser.add_argument('--save-freq', default=50, type=int,
@@ -53,23 +55,23 @@ parser.add_argument('--no-cuda', action="store_true",
 # HW2 specific arguments
 parser.add_argument('--task', required=True, type=str,
                     help='Specify the task to train [caption, chatbot]')
-parser.add_argument('--lr', default=1e-3, type=float,
-                    help='Learning rate (default: 1e-3)')
-parser.add_argument('--rnn-mode', default='LSTM', type=str,
+parser.add_argument('--lr', default=1e-4, type=float,
+                    help='Learning rate (default: 1e-4)')
+parser.add_argument('--rnn-type', default='LSTM', type=str,
                     help='Seq2Seq RNN mode [LSTM, GRU] (default: LSTM)')
-parser.add_argument('--hidden-size', default=256, type=int,
+parser.add_argument('--hidden-size', default=8, type=int,
                     help='Seq2Seq hidden features dimension (default: 256)')
-parser.add_argument('--emb-size', default=1000, type=int,
+parser.add_argument('--emb-size', default=32, type=int,
                     help='Word embedding dimension (default: 1000)')
 
 
 def main(args):
     train_logger = Logger()
-    training_name = args.task.title() + '_'
+    training_name = args.task.title()
     if args.task.lower() == 'caption':
         model = Seq2Seq(hidden_size=args.hidden_size,
                         output_size=args.emb_size,
-                        mode=args.rnn_mode)
+                        rnn_type=args.rnn_type)
         model.summary()
 
         data_loader = CaptionDataLoader(data_dir=args.data_dir,

@@ -12,15 +12,6 @@ from preprocess.embedding import OneHot
 
 
 class CaptionDataLoader(BaseDataLoader):
-    """ Format:
-        :returns: in_seq, out_seq, formatted
-
-        in_seq:     batch size * 80 * 4096
-        out_seq:    batch size * max length * embedder dict size
-            padded per batch in __next__()
-        formatted:
-            [{'caption': ['...', '...'], 'id': '...'}, ...]
-    """
     def __init__(self, data_dir, batch_size, emb_size, shuffle=True, mode='train'):
         shuffle = shuffle if mode == 'train' else False
         super(CaptionDataLoader, self).__init__(batch_size, shuffle)
@@ -29,8 +20,6 @@ class CaptionDataLoader(BaseDataLoader):
         self.out_seq = []
         self.formatted = []
         self.__parse_dataset(os.path.join(data_dir, 'MLDS_hw2_1_data'))
-        self.n_batch = len(self.in_seq) // self.batch_size
-        self.batch_idx = 0
         self.embedder = OneHot(self.corpus, dict_size=emb_size)
         self.out_seq = [self.embedder.encode_lines(seq) for seq in self.out_seq]
 
@@ -48,7 +37,6 @@ class CaptionDataLoader(BaseDataLoader):
         for video_id, feature in features.items():
             self.video_ids.append(video_id)
             self.in_seq.append(feature)
-            # self.out_seq.append(labels[video_id][0])
             self.out_seq.append(labels[video_id])
             self.formatted.append({'caption': labels[video_id], 'id': video_id})
 
@@ -56,14 +44,24 @@ class CaptionDataLoader(BaseDataLoader):
             self.corpus.extend(captions)
 
     def __next__(self):
+        """
+        Next batch
+        :return:
+            in_seq_batch:  batch size x 80 x 4096
+            out_seq_batch: sequence length x batch size x 1000
+            formatted:     same format as in sample output
+                           [{'caption': ['...', '...'], 'id': '...'}, ...]
+        """
         batch = super(CaptionDataLoader, self).__next__()
         in_seq_batch, out_seq_batch, formatted_batch = batch
-        out_seq_batch = [random.choice(seq) for seq in out_seq_batch]
+        # out_seq_batch = [random.choice(seq) for seq in out_seq_batch]
+        out_seq_batch = [seq[0] for seq in out_seq_batch]
         out_seq_batch = pad_batch(out_seq_batch,
                                   self.embedder.encode_word('<PAD>'),
                                   self.embedder.encode_word('<EOS>'))
+        out_seq_batch = np.array(out_seq_batch).transpose((1, 0, 2))
         if self.mode == 'train':
-            return np.array(in_seq_batch), np.array(out_seq_batch), formatted_batch
+            return np.array(in_seq_batch), out_seq_batch, formatted_batch
         else:
             return np.array(in_seq_batch), formatted_batch
 
@@ -81,10 +79,6 @@ class CaptionDataLoader(BaseDataLoader):
 
     def _n_samples(self):
         return len(self.in_seq)
-
-    def __len__(self):
-        self.n_batch = len(self.in_seq) // self.batch_size
-        return self.n_batch
 
 
 def load_features(path):
@@ -128,7 +122,7 @@ if __name__ == '__main__':
     # for k, v in features.items():
     #     print(k, v, end='\n\n')
 
-    data_loader = CaptionDataLoader('../datasets', 128)
+    data_loader = CaptionDataLoader('../datasets', 128, 60)
     for isb, osb, fb in data_loader:
         print(isb.shape)
         print(osb.shape)
