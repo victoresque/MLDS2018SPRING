@@ -1,25 +1,33 @@
 import argparse
+import logging
 import torch.optim as optim
 from model.seq2seq import Seq2Seq
 from model.loss import cross_entropy
 from model.metric import bleu
-from data_loader.caption_data_loader import CaptionDataLoader
-from trainer.caption_trainer import CaptionTrainer
-from logger.logger import Logger
+from data_loader import CaptionDataLoader
+from trainer import CaptionTrainer
+from logger import Logger
+
+logging.basicConfig(level=logging.INFO, format='')
+
+# TODO: (important) config file support
 
 # FIXME: loss function correctness
 # FIXME: training data (fixed label or random label)
-# FIXME: more information in checkpoint
+# FIXME: more information in checkpoints
 # FIXME: save state_dict or the full model?
 # FIXME: (optional) caption_data_loader shouldn't return 3 objects since it'll affect training process
+
 # TODO: (important) make sure the code is flexible enough to fit 2-1 and 2-2
 # TODO: (important) implement TODOs in seq2seq.py
 # TODO: control Seq2Seq parameters from arguments
 # TODO: create a base class for all embedders
-# TODO: folder structure (embedding.py -> preprocess/embedding.py)
 # TODO: check code clarity and readability
 # TODO: word embedding
 # TODO: make sure different enhancements of Seq2Seq can be toggled
+
+# DONE: folder structure (embedding.py -> preprocess/embedding.py)
+
 # NOTE: coding style should follow PEP8
 
 
@@ -45,18 +53,32 @@ parser.add_argument('--no-cuda', action="store_true",
 # HW2 specific arguments
 parser.add_argument('--task', required=True, type=str,
                     help='Specify the task to train [caption, chatbot]')
+parser.add_argument('--lr', default=1e-3, type=float,
+                    help='Learning rate (default: 1e-3)')
+parser.add_argument('--rnn-mode', default='LSTM', type=str,
+                    help='Seq2Seq RNN mode [LSTM, GRU] (default: LSTM)')
+parser.add_argument('--hidden-size', default=256, type=int,
+                    help='Seq2Seq hidden features dimension (default: 256)')
+parser.add_argument('--emb-size', default=1000, type=int,
+                    help='Word embedding dimension (default: 1000)')
 
 
 def main(args):
-    logger = Logger()
-    identifier = args.task.title() + '_'
+    train_logger = Logger()
+    training_name = args.task.title() + '_'
     if args.task.lower() == 'caption':
-        model = Seq2Seq()
+        model = Seq2Seq(hidden_size=args.hidden_size,
+                        output_size=args.emb_size,
+                        mode=args.rnn_mode)
+        model.summary()
 
-        data_loader = CaptionDataLoader(args.data_dir, args.batch_size)
+        data_loader = CaptionDataLoader(data_dir=args.data_dir,
+                                        batch_size=args.batch_size,
+                                        emb_size=args.emb_size,
+                                        shuffle=True, mode='train')
         valid_data_loader = data_loader.split_validation(args.validation_split)
 
-        optimizer = optim.RMSprop(model.parameters(), lr=1e-3)
+        optimizer = optim.RMSprop(model.parameters(), lr=args.lr)
         loss = cross_entropy
         metrics = [bleu]
         trainer = CaptionTrainer(model, loss, metrics,
@@ -64,13 +86,15 @@ def main(args):
                                  valid_data_loader=valid_data_loader,
                                  optimizer=optimizer,
                                  epochs=args.epochs,
-                                 logger=logger,
+                                 train_logger=train_logger,
                                  save_dir=args.save_dir,
                                  save_freq=args.save_freq,
                                  resume=args.resume,
                                  verbosity=args.verbosity,
-                                 identifier=identifier,
-                                 with_cuda=not args.no_cuda)
+                                 training_name=training_name,
+                                 with_cuda=not args.no_cuda,
+                                 monitor='val_bleu',
+                                 monitor_mode='max')
     else:
         model = None
         data_loader = None
@@ -80,7 +104,6 @@ def main(args):
         metrics = []
         trainer = None
 
-    model.summary()
     trainer.train()
 
 

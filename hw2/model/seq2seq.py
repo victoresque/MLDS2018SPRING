@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from base.base_model import BaseModel
+from base import BaseModel
 from model.modules import Encoder, Decoder
 
 # TODO: Bidirectional
@@ -15,15 +15,12 @@ from model.modules import Encoder, Decoder
 
 
 class Seq2Seq(BaseModel):
-    def __init__(self, input_size=4096, hidden_size=64, output_size=1000, mode='LSTM'):
-        super(BaseModel, self).__init__()
+    def __init__(self, input_size=4096, hidden_size=256, output_size=1000, mode='LSTM'):
+        super(Seq2Seq, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
         self.mode = mode
-        self._build_model()
-
-    def _build_model(self):
         self.encoder = Encoder(self.input_size, self.hidden_size, mode=self.mode)
         self.decoder = Decoder(self.hidden_size, self.output_size, mode=self.mode)
         # self.enc_h0 = Variable(self.encoder.init_hidden())

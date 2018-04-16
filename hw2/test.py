@@ -7,7 +7,7 @@ from data_loader.caption_data_loader import CaptionDataLoader
 from utils.util import ensure_dir
 
 
-parser = argparse.ArgumentParser(description='HW2 Training')
+parser = argparse.ArgumentParser(description='HW2 Testing')
 parser.add_argument('--data-dir', default='datasets', type=str,
                     help='directory of training/testing data (default: datasets)')
 parser.add_argument('--no-cuda', action="store_true",
