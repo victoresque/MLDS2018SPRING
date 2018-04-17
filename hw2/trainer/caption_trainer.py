@@ -17,12 +17,13 @@ class CaptionTrainer(BaseTrainer):
         self.valid = True if self.valid_data_loader is not None else False
         self.log_step = int(np.sqrt(self.batch_size))
 
-    def _to_variable(self, in_seq, out_seq):
-        in_seq, out_seq = torch.FloatTensor(in_seq), torch.FloatTensor(out_seq)
-        in_seq, out_seq = Variable(in_seq), Variable(out_seq)
+    def _to_variable(self, in_seq, out_seq, targ_mask):
+        in_seq = Variable(torch.FloatTensor(in_seq))
+        out_seq = Variable(torch.FloatTensor(out_seq))
+        targ_mask = Variable(torch.FloatTensor(targ_mask))
         if self.with_cuda:
-            in_seq, out_seq = in_seq.cuda(), out_seq.cuda()
-        return in_seq, out_seq
+            in_seq, out_seq, targ_mask = in_seq.cuda(), out_seq.cuda(), targ_mask.cuda()
+        return in_seq, out_seq, targ_mask
 
     def _eval_metrics(self, out_seq, fmt):
         acc_metrics = np.zeros(len(self.metrics))
@@ -51,20 +52,23 @@ class CaptionTrainer(BaseTrainer):
 
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
-        for batch_idx, (in_seq, targ_seq, fmt) in enumerate(self.data_loader):
-            in_seq, targ_seq = self._to_variable(in_seq, targ_seq)
+        for batch_idx, (in_seq, target) in enumerate(self.data_loader):
+            targ_seq = target[0]
+            targ_mask = target[1]
+            formatted = target[2]
+            in_seq, targ_seq, targ_mask = self._to_variable(in_seq, targ_seq, targ_mask)
 
             self.optimizer.zero_grad()
-            out_seq = self.model(in_seq)
-            loss = self.loss(out_seq, targ_seq)
+            out_seq = self.model(in_seq, len(targ_seq))
+            loss = self.loss(out_seq, targ_seq, targ_mask)
             loss.backward()
             self.optimizer.step()
 
             total_loss += loss.data[0]
-            total_metrics += self._eval_metrics(out_seq, fmt)
+            total_metrics += self._eval_metrics(out_seq, formatted)
 
             if batch_idx == 0:
-                self._show_seq(out_seq, fmt)
+                self._show_seq(out_seq, formatted)
 
             if self.verbosity >= 2 and batch_idx % self.log_step == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
@@ -86,16 +90,19 @@ class CaptionTrainer(BaseTrainer):
         self.model.eval()
         total_val_loss = 0
         total_val_metrics = np.zeros(len(self.metrics))
-        for batch_idx, (in_seq, targ_seq, fmt) in enumerate(self.valid_data_loader):
-            in_seq, targ_seq = self._to_variable(in_seq, targ_seq)
+        for batch_idx, (in_seq, target) in enumerate(self.valid_data_loader):
+            targ_seq = target[0]
+            targ_mask = target[1]
+            formatted = target[2]
+            in_seq, targ_seq, targ_mask = self._to_variable(in_seq, targ_seq, targ_mask)
 
-            out_seq = self.model(in_seq)
-            loss = self.loss(out_seq, targ_seq)
+            out_seq = self.model(in_seq, len(targ_seq))
+            loss = self.loss(out_seq, targ_seq, targ_mask)
             total_val_loss += loss.data[0]
-            total_val_metrics += self._eval_metrics(out_seq, fmt)
+            total_val_metrics += self._eval_metrics(out_seq, formatted)
 
             if batch_idx == 0:
-                self._show_seq(out_seq, fmt)
+                self._show_seq(out_seq, formatted)
 
         return {
             'val_loss': total_val_loss / len(self.valid_data_loader),

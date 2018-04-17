@@ -4,14 +4,9 @@ import random
 import numpy as np
 from base import BaseDataLoader
 
-# FIXME: (important) Train only by the first label?
-# DONE: Output sequence padding
-# DONE: One-hot encoding
-# DONE: Tokens (<PAD>, <BOS>, <EOS>, <UNK>, ...)
-
 
 class CaptionDataLoader(BaseDataLoader):
-    def __init__(self, data_dir, batch_size, embedder, emb_size, shuffle=True, mode='train'):
+    def __init__(self, data_dir, batch_size, embedder, emb_size, shuffle=False, mode='train'):
         shuffle = shuffle if mode == 'train' else False
         super(CaptionDataLoader, self).__init__(batch_size, shuffle)
         self.mode = mode
@@ -46,23 +41,42 @@ class CaptionDataLoader(BaseDataLoader):
     def __next__(self):
         """
         Next batch
-        :return:
-            in_seq_batch:  80 x batch size x 4096
-            out_seq_batch: sequence length x batch size x 1000
-            formatted:     same format as in sample output
-                           [{'caption': ['...', '...'], 'id': '...'}, ...]
+
+        in_seq_batch:
+            type:  ndarray
+            shape: 80 x batch size x 4096
+        out_seq_batch:
+            type:  ndarray
+            shape: max sequence length in batch x batch size x emb size
+        out_seq_mask:
+            type:  ndarray
+            shape: max sequence length in batch x batch size
+            note:  0 if <PAD>, else 1
+        formatted:
+            type:  list
+            note:  same format as in sample output
+                   [{'caption': ['...', '...'], 'id': '...'}, ...]
+
+        Note:
+            should only return two items, output-related items packed into a tuple:
+                input, (output, ...)
         """
         batch = super(CaptionDataLoader, self).__next__()
         in_seq_batch, out_seq_batch, formatted_batch = batch
+
+        # pick random sequence as target
         out_seq_batch = [random.choice(seq) for seq in out_seq_batch]
+        # pick first sequence as target
         # out_seq_batch = [seq[0] for seq in out_seq_batch]
-        out_seq_batch = pad_batch(out_seq_batch,
-                                  self.embedder.encode_word('<PAD>'),
-                                  self.embedder.encode_word('<EOS>'))
+
+        out_seq_batch, out_seq_mask = pad_batch(out_seq_batch,
+                                                self.embedder.encode_word('<PAD>'),
+                                                self.embedder.encode_word('<EOS>'))
         in_seq_batch = np.array(in_seq_batch).transpose((1, 0, 2))
         out_seq_batch = np.array(out_seq_batch).transpose((1, 0, 2))
+        out_seq_mask = np.array(out_seq_mask).transpose((1, 0))
         if self.mode == 'train':
-            return in_seq_batch, out_seq_batch, formatted_batch
+            return in_seq_batch, (out_seq_batch, out_seq_mask, formatted_batch)
         else:
             return in_seq_batch, formatted_batch
 
@@ -100,17 +114,21 @@ def load_labels(path):
     return labels
 
 
-def pad_batch(batch, pad_val, eos_val, seq_len=24):
-    # FIXME: seq_len
-    eos_val = eos_val.reshape((1, -1))
+def pad_batch(batch, pad_val, eos_val):
+    seq_len = 0
+    for seq in batch:
+        seq_len = max(len(seq), seq_len)
+    mask = np.ones((len(batch), seq_len))
     for i, seq in enumerate(batch):
         seq = seq[:seq_len-1]
-        seq = np.append(seq, eos_val, axis=0)
+        seq = np.append(seq, [eos_val], axis=0)
         if len(seq) < seq_len:
             batch[i] = np.append(seq, [pad_val for _ in range(seq_len-len(seq))], axis=0)
         else:
             batch[i] = seq
-    return batch
+        for j in range(len(seq), seq_len):
+            mask[i][j] = 0
+    return batch, mask
 
 
 if __name__ == '__main__':
@@ -121,10 +139,11 @@ if __name__ == '__main__':
     # features = load_features('../datasets/MLDS_hw2_1_data/training_data/feat')
     # for k, v in features.items():
     #     print(k, v, end='\n\n')
-
-    data_loader = CaptionDataLoader('../datasets', 128, 60)
-    for isb, osb, fb in data_loader:
+    from preprocess.embedding import OneHotEmbedder
+    data_loader = CaptionDataLoader('../datasets', 8, OneHotEmbedder, 1000)
+    for isb, (osb, mask, fb) in data_loader:
         print(isb.shape)
         print(osb.shape)
+        print(mask.shape)
         # print(fb)
         input()

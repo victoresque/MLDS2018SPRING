@@ -7,22 +7,27 @@ from torch.autograd import Variable
 
 
 class Decoder(nn.Module):
-    def __init__(self, hidden_size, output_size, rnn_type='LSTM'):
+    def __init__(self, config):
         super(Decoder, self).__init__()
-        self.hidden_size = hidden_size
-        self.output_size = output_size
-        self.rnn_type = rnn_type.upper()
+        self.hidden_size = config['hidden_size']
+        self.output_size = config['emb_size']
+        self.rnn_type = config['rnn_type'].upper()
         self.rnn = eval('nn.' + self.rnn_type)(
-            hidden_size, hidden_size, batch_first=False,
-            num_layers=2, dropout=0.1, bidirectional=False
+            input_size=self.hidden_size,
+            hidden_size=self.hidden_size,
+            num_layers=config['layers'],
+            dropout=config['dec_dropout'],
+            bidirectional=False
         )
-        self.emb_in = nn.Linear(output_size, hidden_size)
-        self.emb_out = nn.Linear(hidden_size, output_size)
+        self.emb_in = nn.Linear(self.output_size, self.hidden_size)
+        self.emb_out = nn.Linear(self.hidden_size, self.output_size)
 
-    def forward(self, enc_out, hidden, embedder):
+    def forward(self, enc_out, hidden, seq_len, embedder):
+        """
+        Note:
+             input/return type/shape refer to seq2seq.py
+        """
         out_seq = []
-        # FIXME: seq_len from argument
-        seq_len = 24
         bos = embedder.encode_word('<BOS>')
         n_batch = hidden[0].data.shape[1] if self.rnn_type == 'LSTM' else hidden.data.shape[1]
         dec_in = Variable(torch.FloatTensor(np.array([[bos for _ in range(n_batch)]])))
@@ -37,4 +42,5 @@ class Decoder(nn.Module):
             dec_in = embedder.dec_out2dec_in(dec_out)
             dec_in = Variable(torch.FloatTensor(dec_in))
 
+        out_seq = torch.stack(out_seq)
         return out_seq

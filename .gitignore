@@ -5,7 +5,6 @@ data/
 results/
 ref/
 *ipynb*
-*.json
 *.pptx
 .DS_Store
 *.pkl

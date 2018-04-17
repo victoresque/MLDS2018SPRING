@@ -13,6 +13,15 @@ from model.modules import Encoder, Decoder
 
 
 class Seq2Seq(BaseModel):
+    """
+    Note:
+        input:
+            type:  Variable
+            shape: 80 x batch size x 4096
+        output:
+            type:  Variable
+            shape: max sequence length in batch x batch size x emb size
+    """
     def __init__(self, config, embedder):
         super(Seq2Seq, self).__init__()
         self.input_size = config['input_size']
@@ -20,12 +29,10 @@ class Seq2Seq(BaseModel):
         self.emb_size = config['emb_size']
         self.embedder = embedder
         self.rnn_type = config['rnn_type'].upper()
-        if self.rnn_type not in ['LSTM', 'GRU']:
-            raise Exception('Unknown cell type: {}'.format(self.rnn_type))
-        self.encoder = Encoder(self.input_size, self.hidden_size, rnn_type=self.rnn_type)
-        self.decoder = Decoder(self.hidden_size, self.emb_size, rnn_type=self.rnn_type)
+        self.encoder = Encoder(config)
+        self.decoder = Decoder(config)
 
-    def forward(self, in_seq):
+    def forward(self, in_seq, seq_len):
         enc_out, hidden = self.encoder(in_seq)
-        out_seq = self.decoder(enc_out, hidden, self.embedder)
+        out_seq = self.decoder(enc_out, hidden, seq_len, self.embedder)
         return out_seq

@@ -11,16 +11,10 @@ from logger import Logger
 
 logging.basicConfig(level=logging.INFO, format='')
 
-# FIXME: loss function correctness
-# FIXME: training data (fixed label or random label)
-# FIXME: more information in checkpoints
-
-# TODO: (important) make sure the code is flexible enough to fit 2-1 and 2-2
+# TODO: (important) HW2-2
 # TODO: (important) implement TODOs in seq2seq.py
-# TODO: control Seq2Seq parameters from arguments
-# TODO: check code clarity and readability
-# TODO: make sure different enhancements of Seq2Seq can be toggled
-
+# TODO: specify Word2VecEmbedder model path
+# NOTE: currently training target is randomly picked
 # NOTE: coding style should follow PEP8
 
 
@@ -51,24 +45,6 @@ def main(config, resume):
                                  config=config,
                                  **config['trainer'])
     else:
-        # TODO
-        embedder = OneHotEmbedder
-        data_loader = ChatbotDataLoader(data_dir=args.data_dir,
-                                        batch_size=args.batch_size,
-                                        embedder=embedder,
-                                        emb_size=args.emb_size,
-                                        shuffle=True, mode='train')
-        valid_data_loader = data_loader.split_validation(args.validation_split)
-
-        model = Seq2Seq(input_size=4096,
-                        hidden_size=args.hidden_size,
-                        output_size=args.emb_size,
-                        embedder=data_loader.embedder,
-                        rnn_type=args.rnn_type)
-
-        optimizer = optim.RMSprop(model.parameters(), lr=args.lr)
-        loss = None
-        metrics = []
         trainer = None
 
     trainer.train()

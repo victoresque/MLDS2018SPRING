@@ -35,7 +35,9 @@ class BaseTrainer:
         self.checkpoint_dir = os.path.join(save_dir, training_name)
         ensure_dir(self.checkpoint_dir)
         self.config = config
-        json.dump(config, open(os.path.join(self.checkpoint_dir, 'config.json'), 'w'))
+        json.dump(config,
+                  open(os.path.join(self.checkpoint_dir, 'config.json'), 'w'),
+                  indent=4, sort_keys=False)
         if resume:
             self._resume_checkpoint(resume)
 
