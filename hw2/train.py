@@ -2,9 +2,9 @@ import argparse
 import logging
 import torch.optim as optim
 from model.seq2seq import Seq2Seq
-from model.loss import cross_entropy
+from model.loss import cross_entropy, mse_loss
 from model.metric import bleu
-from data_loader import CaptionDataLoader
+from data_loader import CaptionDataLoader, ChatbotDataLoader
 from trainer import CaptionTrainer
 from preprocess.embedding import OneHotEmbedder, Word2VecEmbedder
 from logger import Logger
@@ -66,10 +66,12 @@ parser.add_argument('--emb-size', default=1024, type=int,
 
 
 def main(args):
+    # print(vars(args))
     train_logger = Logger()
     training_name = args.name
     if args.task.lower() == 'caption':
         embedder = OneHotEmbedder
+        # embedder = Word2VecEmbedder
         data_loader = CaptionDataLoader(data_dir=args.data_dir,
                                         batch_size=args.batch_size,
                                         embedder=embedder,
@@ -87,6 +89,7 @@ def main(args):
         optimizer = optim.RMSprop(model.parameters(), lr=args.lr)
         loss = cross_entropy
         metrics = [bleu]
+
         trainer = CaptionTrainer(model, loss, metrics,
                                  data_loader=data_loader,
                                  valid_data_loader=valid_data_loader,
@@ -102,10 +105,22 @@ def main(args):
                                  monitor='val_bleu',
                                  monitor_mode='max')
     else:
-        model = None
-        data_loader = None
-        data_loader, valid_data_loader = None, None
-        optimizer = None
+        # TODO
+        embedder = OneHotEmbedder
+        data_loader = ChatbotDataLoader(data_dir=args.data_dir,
+                                        batch_size=args.batch_size,
+                                        embedder=embedder,
+                                        emb_size=args.emb_size,
+                                        shuffle=True, mode='train')
+        valid_data_loader = data_loader.split_validation(args.validation_split)
+
+        model = Seq2Seq(input_size=4096,
+                        hidden_size=args.hidden_size,
+                        output_size=args.emb_size,
+                        embedder=data_loader.embedder,
+                        rnn_type=args.rnn_type)
+
+        optimizer = optim.RMSprop(model.parameters(), lr=args.lr)
         loss = None
         metrics = []
         trainer = None

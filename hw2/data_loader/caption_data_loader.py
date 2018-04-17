@@ -100,15 +100,14 @@ def load_labels(path):
     return labels
 
 
-def pad_batch(batch, pad_val, eos_val):
-    maxlen = 0
+def pad_batch(batch, pad_val, eos_val, seq_len=24):
+    # FIXME: seq_len
     eos_val = eos_val.reshape((1, -1))
-    for item in batch:
-        maxlen = max(maxlen, len(item))
     for i, seq in enumerate(batch):
+        seq = seq[:seq_len-1]
         seq = np.append(seq, eos_val, axis=0)
-        if maxlen+1 != len(seq):
-            batch[i] = np.append(seq, [pad_val for _ in range(maxlen-len(seq)+1)], axis=0)
+        if len(seq) < seq_len:
+            batch[i] = np.append(seq, [pad_val for _ in range(seq_len-len(seq))], axis=0)
         else:
             batch[i] = seq
     return batch

@@ -48,7 +48,7 @@ class Word2VecEmbedder:
                     self.frequency[word] = 1
                 else:
                     self.frequency[word] += 1
-        min_count = 2
+        min_count = 16
         max_len = 0
         for i, line in enumerate(self.corpus):
             max_len = max(len(line), max_len)
@@ -97,6 +97,9 @@ class Word2VecEmbedder:
             decoded.append(line)
         return decoded
 
+    def dec_out2dec_in(self, dec_out):
+        return dec_out.cpu().data.numpy()
+
 
 class OneHotEmbedder:
     def __init__(self, corpus, emb_size):
@@ -138,8 +141,8 @@ class OneHotEmbedder:
         for line in lines:
             line = [self.word_list[int(np.argmax(vec, 0))] for vec in line]
             line = ' '.join(line)
-            # line = line.split('<EOS>', 1)[0]
-            # line = line.split('<PAD>', 1)[0]
+            line = line.split('<EOS>', 1)[0]
+            line = line.split('<PAD>', 1)[0]
             line = line.split()
             if len(line) == 0:
                 line = ['a']

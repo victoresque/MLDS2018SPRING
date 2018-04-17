@@ -4,6 +4,7 @@ from torch.autograd import Variable
 import numpy as np
 from model.seq2seq import Seq2Seq
 from data_loader.caption_data_loader import CaptionDataLoader
+from preprocess.embedding import OneHotEmbedder, Word2VecEmbedder
 from utils.util import ensure_dir
 
 
@@ -13,7 +14,7 @@ parser.add_argument('--data-dir', default='datasets', type=str,
 parser.add_argument('--no-cuda', action="store_true",
                     help='use CPU instead of GPU')
 # HW2 specific arguments
-parser.add_argument('--model', default='saved/CaptionW2V/checkpoint-epoch2200-bleu-0.80-val_bleu-0.57.pth.tar', type=str,
+parser.add_argument('--model', default='saved/CaptionW2V/checkpoint-epoch160-bleu-0.89-val_bleu-0.55.pth.tar', type=str,
                     help='model path')
 parser.add_argument('--task', required=True, type=str,
                     help='Specify the task to train [caption, chatbot]')
@@ -23,17 +24,24 @@ parser.add_argument('--source', default='dataset', type=str,
 
 def main(args):
     if args.task.lower() == 'caption':
-        model = Seq2Seq(hidden_size=256, output_size=256, rnn_type='LSTM')
+        embedder = OneHotEmbedder
+        data_loader = CaptionDataLoader(args.data_dir,
+                                        batch_size=1,
+                                        embedder=embedder,
+                                        emb_size=1024,
+                                        shuffle=False, mode='test')
+
+        model = Seq2Seq(input_size=4096,
+                        hidden_size=256,
+                        output_size=1024,
+                        embedder=data_loader.embedder,
+                        rnn_type='LSTM')
         checkpoint = torch.load(args.model)
         model.load_state_dict(checkpoint['state_dict'])
-        model.summary()
         if not args.no_cuda:
             model.cuda()
         model.eval()
-        data_loader = CaptionDataLoader(args.data_dir,
-                                        batch_size=1,
-                                        emb_size=256,
-                                        mode='test')
+        model.summary()
 
         result = []
         for batch_idx, (in_seq, fmt) in enumerate(data_loader):
@@ -51,9 +59,22 @@ def main(args):
         ensure_dir('results')
         with open('results/prediction.txt', 'w') as f:
             for video_id, caption in result:
+                caption = postprocess(caption)
                 f.write(video_id+','+caption+'\n')
     else:
         pass
+
+
+def postprocess(raw):
+    raw = raw.split()
+    line = []
+    prev_word = None
+    raw = [w for w in raw if w != '<UNK>']
+    for word in raw:
+        if word != prev_word:
+            line.append(word)
+            prev_word = word
+    return ' '.join(line)
 
 
 if __name__ == '__main__':
