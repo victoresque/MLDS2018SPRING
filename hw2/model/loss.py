@@ -22,7 +22,9 @@ def cross_entropy(input, target, mask):
     mask = mask.transpose(0, 1)
     seq_len = torch.sum(mask, dim=1).cpu().data.numpy()
     for i in range(batch_size):
-        loss = loss + F.cross_entropy(input[i], target[i], size_average=False) / float(seq_len[i])
+        partial_loss = F.cross_entropy(input[i], target[i], size_average=False, reduce=False)
+        partial_loss = torch.mul(partial_loss, mask[i])
+        loss = loss + torch.sum(partial_loss) / float(seq_len[i])
     return loss / batch_size
 
 
