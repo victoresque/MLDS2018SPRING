@@ -3,7 +3,6 @@ import json
 import random
 import numpy as np
 from base import BaseDataLoader
-from preprocess.embedding import OneHot
 
 # FIXME: (important) Train only by the first label?
 # DONE: Output sequence padding
@@ -12,7 +11,7 @@ from preprocess.embedding import OneHot
 
 
 class CaptionDataLoader(BaseDataLoader):
-    def __init__(self, data_dir, batch_size, emb_size, shuffle=True, mode='train'):
+    def __init__(self, data_dir, batch_size, embedder, emb_size, shuffle=True, mode='train'):
         shuffle = shuffle if mode == 'train' else False
         super(CaptionDataLoader, self).__init__(batch_size, shuffle)
         self.mode = mode
@@ -20,7 +19,8 @@ class CaptionDataLoader(BaseDataLoader):
         self.out_seq = []
         self.formatted = []
         self.__parse_dataset(os.path.join(data_dir, 'MLDS_hw2_1_data'))
-        self.embedder = OneHot(self.corpus, dict_size=emb_size)
+
+        self.embedder = embedder(self.corpus, emb_size=emb_size)
         self.out_seq = [self.embedder.encode_lines(seq) for seq in self.out_seq]
 
     def __parse_dataset(self, base):
@@ -47,7 +47,7 @@ class CaptionDataLoader(BaseDataLoader):
         """
         Next batch
         :return:
-            in_seq_batch:  batch size x 80 x 4096
+            in_seq_batch:  80 x batch size x 4096
             out_seq_batch: sequence length x batch size x 1000
             formatted:     same format as in sample output
                            [{'caption': ['...', '...'], 'id': '...'}, ...]
@@ -59,11 +59,12 @@ class CaptionDataLoader(BaseDataLoader):
         out_seq_batch = pad_batch(out_seq_batch,
                                   self.embedder.encode_word('<PAD>'),
                                   self.embedder.encode_word('<EOS>'))
+        in_seq_batch = np.array(in_seq_batch).transpose((1, 0, 2))
         out_seq_batch = np.array(out_seq_batch).transpose((1, 0, 2))
         if self.mode == 'train':
-            return np.array(in_seq_batch), out_seq_batch, formatted_batch
+            return in_seq_batch, out_seq_batch, formatted_batch
         else:
-            return np.array(in_seq_batch), formatted_batch
+            return in_seq_batch, formatted_batch
 
     def _pack_data(self):
         packed = list(zip(self.in_seq, self.out_seq, self.formatted))

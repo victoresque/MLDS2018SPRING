@@ -14,11 +14,11 @@ class CaptionTrainer(BaseTrainer):
         self.batch_size = data_loader.batch_size
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
-        self.valid = True if self.valid_data_loader else False
+        self.valid = True if self.valid_data_loader is not None else False
         self.log_step = int(np.sqrt(self.batch_size))
 
     def _to_variable(self, in_seq, out_seq):
-        in_seq, out_seq = torch.FloatTensor(in_seq), torch.LongTensor(out_seq)
+        in_seq, out_seq = torch.FloatTensor(in_seq), torch.FloatTensor(out_seq)
         in_seq, out_seq = Variable(in_seq), Variable(out_seq)
         if self.with_cuda:
             in_seq, out_seq = in_seq.cuda(), out_seq.cuda()

@@ -60,9 +60,9 @@ class BaseTrainer:
             if (self.monitor_mode == 'min' and log[self.monitor] < self.monitor_best)\
                     or (self.monitor_mode == 'max' and log[self.monitor] > self.monitor_best):
                 self.monitor_best = log[self.monitor]
-                self._save_checkpoint(epoch, log['loss'], save_best=True)
+                self._save_checkpoint(epoch, log, save_best=True)
             if epoch % self.save_freq == 0:
-                self._save_checkpoint(epoch, log['loss'])
+                self._save_checkpoint(epoch, log)
 
     def _train_epoch(self, epoch):
         """
@@ -72,7 +72,7 @@ class BaseTrainer:
         """
         raise NotImplementedError
 
-    def _save_checkpoint(self, epoch, loss, save_best=False):
+    def _save_checkpoint(self, epoch, log, save_best=False):
         """
         Saving checkpoints
 
@@ -90,7 +90,8 @@ class BaseTrainer:
             'monitor_best': self.monitor_best,
         }
         filename = os.path.join(self.checkpoint_dir,
-                                'checkpoint_epoch{:02d}_loss_{:.5f}.pth.tar'.format(epoch, loss))
+                                'checkpoint-epoch{:03d}-bleu-{:.2f}-val_bleu-{:.2f}.pth.tar'.format(
+                                    epoch, log['bleu'], log['val_bleu']))
         torch.save(state, filename)
         if save_best:
             os.rename(filename, os.path.join(self.checkpoint_dir, 'model_best.pth.tar'))
