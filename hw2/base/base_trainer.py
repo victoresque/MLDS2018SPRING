@@ -1,5 +1,6 @@
 import os
 import math
+import json
 import logging
 import torch
 from utils.util import ensure_dir
@@ -11,7 +12,7 @@ class BaseTrainer:
     """
     def __init__(self, model, loss, metrics, optimizer, epochs,
                  save_dir, save_freq, resume, verbosity, training_name,
-                 with_cuda, train_logger=None, monitor='loss', monitor_mode='min'):
+                 with_cuda, config, train_logger=None, monitor='loss', monitor_mode='min'):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.model = model
         self.loss = loss
@@ -33,6 +34,8 @@ class BaseTrainer:
         self.start_epoch = 1
         self.checkpoint_dir = os.path.join(save_dir, training_name)
         ensure_dir(self.checkpoint_dir)
+        self.config = config
+        json.dump(config, open(os.path.join(self.checkpoint_dir, 'config.json'), 'w'))
         if resume:
             self._resume_checkpoint(resume)
 
@@ -88,6 +91,7 @@ class BaseTrainer:
             'state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
             'monitor_best': self.monitor_best,
+            'config': self.config
         }
         filename = os.path.join(self.checkpoint_dir,
                                 'checkpoint-epoch{:03d}-bleu-{:.2f}-val_bleu-{:.2f}.pth.tar'.format(
@@ -112,4 +116,5 @@ class BaseTrainer:
         self.model.load_state_dict(checkpoint['state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         self.train_logger = checkpoint['logger']
+        self.config = checkpoint['config']
         self.logger.info("Checkpoint '{}' (epoch {}) loaded".format(resume_path, self.start_epoch))

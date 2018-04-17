@@ -9,7 +9,7 @@ class Encoder(nn.Module):
         self.rnn_type = rnn_type.upper()
         self.rnn = eval('nn.' + self.rnn_type)(
             input_size, hidden_size, batch_first=False,
-            num_layers=2, dropout=0., bidirectional=False
+            num_layers=2, dropout=0.25, bidirectional=False
         )
 
     def forward(self, in_seq):

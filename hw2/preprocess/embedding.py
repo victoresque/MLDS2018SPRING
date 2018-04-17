@@ -48,7 +48,7 @@ class Word2VecEmbedder:
                     self.frequency[word] = 1
                 else:
                     self.frequency[word] += 1
-        min_count = 16
+        min_count = 4
         max_len = 0
         for i, line in enumerate(self.corpus):
             max_len = max(len(line), max_len)

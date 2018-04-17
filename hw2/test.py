@@ -14,7 +14,7 @@ parser.add_argument('--data-dir', default='datasets', type=str,
 parser.add_argument('--no-cuda', action="store_true",
                     help='use CPU instead of GPU')
 # HW2 specific arguments
-parser.add_argument('--model', default='saved/CaptionW2V/checkpoint-epoch160-bleu-0.89-val_bleu-0.55.pth.tar', type=str,
+parser.add_argument('--model', default='saved/CaptionOH_wd1e-6_do0.1_0.25/checkpoint-epoch120-bleu-0.82-val_bleu-0.73.pth.tar', type=str,
                     help='model path')
 parser.add_argument('--task', required=True, type=str,
                     help='Specify the task to train [caption, chatbot]')

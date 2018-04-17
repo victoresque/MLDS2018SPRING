@@ -14,7 +14,7 @@ class Decoder(nn.Module):
         self.rnn_type = rnn_type.upper()
         self.rnn = eval('nn.' + self.rnn_type)(
             hidden_size, hidden_size, batch_first=False,
-            num_layers=2, dropout=0., bidirectional=False
+            num_layers=2, dropout=0.1, bidirectional=False
         )
         self.emb_in = nn.Linear(output_size, hidden_size)
         self.emb_out = nn.Linear(hidden_size, output_size)

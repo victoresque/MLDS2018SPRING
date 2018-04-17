@@ -6,11 +6,11 @@ from base.base_trainer import BaseTrainer
 
 class CaptionTrainer(BaseTrainer):
     def __init__(self, model, loss, metrics, data_loader, optimizer, epochs,
-                 save_dir, save_freq, resume, with_cuda, verbosity, training_name='',
+                 save_dir, save_freq, resume, with_cuda, verbosity, config, training_name='',
                  valid_data_loader=None, train_logger=None, monitor='loss', monitor_mode='min'):
         super(CaptionTrainer, self).__init__(model, loss, metrics, optimizer, epochs,
                                              save_dir, save_freq, resume, verbosity, training_name,
-                                             with_cuda, train_logger, monitor, monitor_mode)
+                                             with_cuda, config, train_logger, monitor, monitor_mode)
         self.batch_size = data_loader.batch_size
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader

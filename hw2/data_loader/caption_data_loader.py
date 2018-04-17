@@ -54,8 +54,8 @@ class CaptionDataLoader(BaseDataLoader):
         """
         batch = super(CaptionDataLoader, self).__next__()
         in_seq_batch, out_seq_batch, formatted_batch = batch
-        # out_seq_batch = [random.choice(seq) for seq in out_seq_batch]
-        out_seq_batch = [seq[0] for seq in out_seq_batch]
+        out_seq_batch = [random.choice(seq) for seq in out_seq_batch]
+        # out_seq_batch = [seq[0] for seq in out_seq_batch]
         out_seq_batch = pad_batch(out_seq_batch,
                                   self.embedder.encode_word('<PAD>'),
                                   self.embedder.encode_word('<EOS>'))
