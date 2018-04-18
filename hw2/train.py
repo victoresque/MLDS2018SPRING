@@ -66,12 +66,12 @@ if __name__ == '__main__':
         config = torch.load(args.resume)['config']
     else:
         import json
+        import os
         config = json.load(open(args.config))
+        assert not os.path.exists(os.path.join(config['trainer']['save_dir'], config['name']))
 
     # if not args.force:
     #     import os
     #     assert not os.path.exists(os.path.join(config['trainer']['save_dir'], config['name']))
 
-    import os
-    assert not os.path.exists(os.path.join(config['trainer']['save_dir'], config['name']))
-    main(config, args.resume is not None)
+    main(config, args.resume)
