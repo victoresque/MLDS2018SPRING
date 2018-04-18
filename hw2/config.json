@@ -1,15 +1,18 @@
 {
-    "name": "Caption_seq2seq_onehot_256_1024",
+    "name": "Caption_seq2seq_onehot1024_h512_wd2e-2_GRU",
     "task": "caption",
     "cuda": true,
     "embedder": "OneHotEmbedder",
     "data_loader": {
-        "data_dir": "datasets",
+        "data_dir": "datasets/",
         "batch_size": 16,
         "emb_size": 1024,
         "shuffle": true
     },
-    "validation_split": 0.1,
+    "validation": {
+        "validation_split": 0.1,
+        "shuffle": true
+    },
     "optimizer_type": "RMSprop",
     "optimizer": {
         "lr": 0.001,
@@ -21,8 +24,8 @@
         "save_dir": "saved/",
         "save_freq": 20,
         "verbosity": 2,
-        "monitor": "val_bleu",
-        "monitor_mode": "max"
+        "monitor": "val_loss",
+        "monitor_mode": "min"
     },
     "model": {
         "rnn_type": "LSTM",
@@ -30,8 +33,8 @@
         "hidden_size": 256,
         "emb_size": 1024,
         "layers": 2,
-        "enc_dropout": 0.25,
-        "dec_dropout": 0.4,
+        "enc_dropout": 0.2,
+        "dec_dropout": 0.2,
         "bidirectional": false,
         "attention": false,
         "teacher_forcing": false,

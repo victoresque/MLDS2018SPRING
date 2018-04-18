@@ -2,7 +2,7 @@ import argparse
 import logging
 import torch.optim as optim
 from model.seq2seq import Seq2Seq
-from model.loss import cross_entropy, mse_loss
+from model.loss import cross_entropy, cross_entropy2, mse_loss
 from model.metric import bleu
 from data_loader import CaptionDataLoader, ChatbotDataLoader
 from trainer import CaptionTrainer
@@ -25,7 +25,7 @@ def main(config, resume):
         data_loader = CaptionDataLoader(embedder=embedder,
                                         mode='train',
                                         **config['data_loader'])
-        valid_data_loader = data_loader.split_validation(config['validation_split'])
+        valid_data_loader = data_loader.split_validation(**config['validation'])
 
         model = Seq2Seq(config['model'], embedder=data_loader.embedder)
         model.summary()
@@ -56,8 +56,8 @@ if __name__ == '__main__':
                         help='config file path (default: None)')
     parser.add_argument('-r', '--resume', default=None, type=str,
                         help='path to latest checkpoint (default: None)')
-    parser.add_argument('--force', action='store_true',
-                        help='Ignore existing folder')
+    # parser.add_argument('--force', action='store_true',
+    #                     help='Ignore existing folder')
 
     args = parser.parse_args()
     assert (args.config is None) != (args.resume is None)
@@ -68,8 +68,10 @@ if __name__ == '__main__':
         import json
         config = json.load(open(args.config))
 
-    if not args.force:
-        import os
-        assert not os.path.exists(os.path.join(config['trainer']['save_dir'], config['name']))
+    # if not args.force:
+    #     import os
+    #     assert not os.path.exists(os.path.join(config['trainer']['save_dir'], config['name']))
 
+    import os
+    assert not os.path.exists(os.path.join(config['trainer']['save_dir'], config['name']))
     main(config, args.resume is not None)

@@ -35,15 +35,17 @@ class CaptionTrainer(BaseTrainer):
             acc_metrics[i] += metric(out_seq, fmt)
         return acc_metrics
 
-    def _show_seq(self, seq, fmt):
+    def _show_seq(self, seq, fmt, status):
         seq = np.array([s.data.cpu().numpy() for s in seq])
         seq = np.transpose(seq, (1, 0, 2))
         seq = self.data_loader.embedder.decode_lines(seq)
         seq = dict((fmt[j]['id'], line) for j, line in enumerate(seq))
+        print('')
+        print(status)
         for i, (k, v) in enumerate(seq.items()):
             if i == 4: break
             print('{:30s}'.format(k), v)
-        print('--------------------------------------------')
+        print('')
 
     def _train_epoch(self, epoch):
         self.model.train()
@@ -68,12 +70,15 @@ class CaptionTrainer(BaseTrainer):
             total_metrics += self._eval_metrics(out_seq, formatted)
 
             if batch_idx == 0:
-                self._show_seq(out_seq, formatted)
+                self._show_seq(out_seq, formatted, 'train')
 
             if self.verbosity >= 2 and batch_idx % self.log_step == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
-                    epoch, batch_idx * len(in_seq), len(self.data_loader) * len(in_seq),
-                    100.0 * batch_idx / len(self.data_loader), loss.data[0]))
+                    epoch,
+                    batch_idx * self.data_loader.batch_size,
+                    len(self.data_loader) * self.data_loader.batch_size,
+                    100.0 * batch_idx / len(self.data_loader),
+                    loss.data[0]))
 
         log = {
             'loss': total_loss / len(self.data_loader),
@@ -102,7 +107,7 @@ class CaptionTrainer(BaseTrainer):
             total_val_metrics += self._eval_metrics(out_seq, formatted)
 
             if batch_idx == 0:
-                self._show_seq(out_seq, formatted)
+                self._show_seq(out_seq, formatted, 'valid')
 
         return {
             'val_loss': total_val_loss / len(self.valid_data_loader),
