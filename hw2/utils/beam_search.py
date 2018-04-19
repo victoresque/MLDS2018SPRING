@@ -1,18 +1,5 @@
-import argparse
 import numpy as np
-import torch
-from torch.autograd import Variable
-from model.seq2seq import Seq2Seq
-from data_loader.caption_data_loader import CaptionDataLoader
-from preprocess.embedding import OneHotEmbedder, Word2VecEmbedder
-from utils.util import ensure_dir
 
-
-
-"""
-	type:  Variable
-    shape: max sequence length in batch x batch size x emb size
-"""
 
 		
 def beam_search(out_seq, n):
@@ -36,6 +23,11 @@ def beam_search(out_seq, n):
 		possible_prob = [possible_prob[idx] for idx in sorted_idx[:n]]
 		possible_idx  = [possible_idx[idx] for idx in sorted_idx[:n]]
 	
+
+	"""
+	   possible_idx
+	       type: tuple in list [(seq),(seq)]
+	"""
 	return possible_idx
  
 

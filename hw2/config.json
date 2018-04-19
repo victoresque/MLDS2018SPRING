@@ -1,5 +1,5 @@
 {
-    "name": "Caption_seq2seq_onehot1024_h512_wd2e-2_GRU",
+    "name": "Caption_seq2seq_onehot1024_h256_c3_wd2e-2_GRU",
     "task": "caption",
     "cuda": true,
     "embedder": "OneHotEmbedder",
@@ -20,7 +20,7 @@
     },
     "loss": "cross_entropy",
     "trainer": {
-        "epochs": 10,
+        "epochs": 1000,
         "save_dir": "saved/",
         "save_freq": 20,
         "verbosity": 2,
@@ -33,7 +33,7 @@
         "hidden_size": 256,
         "emb_size": 1024,
         "layers": 2,
-        "enc_dropout": 0.2,
+        "enc_dropout": 0.4,
         "dec_dropout": 0.2,
         "bidirectional": false,
         "attention": false,
