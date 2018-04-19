@@ -20,7 +20,7 @@
     },
     "loss": "cross_entropy",
     "trainer": {
-        "epochs": 1000,
+        "epochs": 10,
         "save_dir": "saved/",
         "save_freq": 20,
         "verbosity": 2,

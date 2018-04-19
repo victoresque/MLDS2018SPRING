@@ -8,3 +8,4 @@ ref/
 *.pptx
 .DS_Store
 *.pkl
+sftp-config.json
