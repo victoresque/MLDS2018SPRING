@@ -23,12 +23,12 @@ class Seq2Seq(BaseModel):
             shape: max sequence length in batch x batch size x emb size
     """
     def __init__(self, config, embedder):
-        super(Seq2Seq, self).__init__()
-        self.input_size = config['input_size']
-        self.hidden_size = config['hidden_size']
-        self.emb_size = config['emb_size']
+        super(Seq2Seq, self).__init__(config)
+        self.input_size = config['model']['input_size']
+        self.hidden_size = config['model']['hidden_size']
+        self.emb_size = config['embedder']['emb_size']
         self.embedder = embedder
-        self.rnn_type = config['rnn_type'].upper()
+        self.rnn_type = config['model']['rnn_type'].upper()
         self.encoder = Encoder(config)
         self.decoder = Decoder(config)
 

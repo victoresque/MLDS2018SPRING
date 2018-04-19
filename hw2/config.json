@@ -1,12 +1,15 @@
 {
-    "name": "Caption_seq2seq_onehot1024_h256_c3_wd2e-2_GRU",
+    "name": "0000000000000003",
     "task": "caption",
     "cuda": true,
-    "embedder": "OneHotEmbedder",
+    "embedder": {
+        "type": "OneHotEmbedder",
+        "emb_size": 4096
+    },
     "data_loader": {
         "data_dir": "datasets/",
-        "batch_size": 16,
-        "emb_size": 1024,
+        "batch_size": 8,
+        "sample_range": [20, 80],
         "shuffle": true
     },
     "validation": {
@@ -15,26 +18,27 @@
     },
     "optimizer_type": "RMSprop",
     "optimizer": {
-        "lr": 0.001,
-        "weight_decay": 1e-06
+        "lr": 0.0001,
+        "weight_decay": 0
     },
     "loss": "cross_entropy",
+    "metrics": ["bleu"],
     "trainer": {
         "epochs": 1000,
         "save_dir": "saved/",
-        "save_freq": 20,
+        "save_freq": 10,
         "verbosity": 2,
         "monitor": "val_loss",
         "monitor_mode": "min"
     },
+    "arch": "Seq2Seq",
     "model": {
         "rnn_type": "LSTM",
         "input_size": 4096,
-        "hidden_size": 256,
-        "emb_size": 1024,
+        "hidden_size": 128,
         "layers": 2,
-        "enc_dropout": 0.4,
-        "dec_dropout": 0.2,
+        "enc_dropout": 0.05,
+        "dec_dropout": 0.05,
         "bidirectional": false,
         "attention": false,
         "teacher_forcing": false,

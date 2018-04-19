@@ -14,14 +14,10 @@ def main(args):
     config = checkpoint['config']
 
     if args.task.lower() == 'caption':
-        embedder = eval(config['embedder'])
-        data_loader = CaptionDataLoader(data_dir=args.data_dir,
-                                        batch_size=1,
-                                        embedder=embedder,
-                                        emb_size=config['data_loader']['emb_size'],
-                                        mode='test', shuffle=False)
+        embedder = eval(config['embedder']['type'])
+        data_loader = CaptionDataLoader(config, embedder, mode='test')
 
-        model = Seq2Seq(config['model'], embedder=data_loader.embedder)
+        model = Seq2Seq(config, embedder=data_loader.embedder)
         model.load_state_dict(checkpoint['state_dict'])
         if not args.no_cuda:
             model.cuda()
@@ -85,15 +81,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='HW2 Testing')
     parser.add_argument('--task', required=True, type=str,
                         help='Specify the task to train [caption, chatbot]')
+    parser.add_argument('--checkpoint', required=True, type=str,
+                        help='model path')
     parser.add_argument('--data-dir', default='datasets', type=str,
                         help='directory of training/testing data (default: datasets)')
     parser.add_argument('--no-cuda', action="store_true",
                         help='use CPU instead of GPU')
-    # HW2 specific arguments
-    parser.add_argument('--checkpoint',
-                        default='saved/Caption_seq2seq_onehot_256_1024/'
-                                'checkpoint-epoch080-bleu-0.84-val_bleu-0.70.pth.tar',
-                        type=str, help='model path')
     parser.add_argument('--source', default='dataset', type=str,
                         help='source [dataset, file] (default: dataset)')
     parser.add_argument('--beam-size', default=3, type=int,

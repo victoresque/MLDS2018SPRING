@@ -6,16 +6,21 @@ from base import BaseDataLoader
 
 
 class CaptionDataLoader(BaseDataLoader):
-    def __init__(self, data_dir, batch_size, embedder, emb_size, shuffle=False, mode='train'):
-        shuffle = shuffle if mode == 'train' else False
-        super(CaptionDataLoader, self).__init__(batch_size, shuffle)
+    def __init__(self, config, embedder, mode):
+        assert mode == 'train' or mode == 'test'
+        if mode == 'train':
+            config['data_loader']['shuffle'] = True
+        else:
+            config['data_loader']['batch_size'] = 1
+        super(CaptionDataLoader, self).__init__(config)
         self.mode = mode
         self.in_seq = []
         self.out_seq = []
         self.formatted = []
-        self.__parse_dataset(os.path.join(data_dir, 'MLDS_hw2_1_data'))
+        self.sample_range = config['data_loader']['sample_range']
+        self.__parse_dataset(os.path.join(config['data_loader']['data_dir'], 'MLDS_hw2_1_data'))
 
-        self.embedder = embedder(self.corpus, emb_size=emb_size)
+        self.embedder = embedder(self.corpus, config)
         self.out_seq = [self.embedder.encode_lines(seq) for seq in self.out_seq]
 
     def __parse_dataset(self, base):
@@ -63,6 +68,11 @@ class CaptionDataLoader(BaseDataLoader):
         """
         batch = super(CaptionDataLoader, self).__next__()
         in_seq_batch, out_seq_batch, formatted_batch = batch
+
+        sample_count = np.random.randint(self.sample_range[0], self.sample_range[1]+1)
+        for i, seq in enumerate(in_seq_batch):
+            rand_idx = sorted(np.random.permutation(80)[:sample_count])
+            in_seq_batch[i] = [seq[idx] for idx in rand_idx]
 
         # pick random sequence as target
         out_seq_batch = [random.choice(seq) for seq in out_seq_batch]

@@ -1,2 +1,2 @@
-from data_loader.caption_data_loader import CaptionDataLoader
-from data_loader.chatbot_data_loader import ChatbotDataLoader
+from .caption_data_loader import CaptionDataLoader
+from .chatbot_data_loader import ChatbotDataLoader

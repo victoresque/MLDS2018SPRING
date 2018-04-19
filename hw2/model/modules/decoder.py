@@ -9,14 +9,14 @@ from torch.autograd import Variable
 class Decoder(nn.Module):
     def __init__(self, config):
         super(Decoder, self).__init__()
-        self.hidden_size = config['hidden_size']
-        self.output_size = config['emb_size']
-        self.rnn_type = config['rnn_type'].upper()
+        self.hidden_size = config['model']['hidden_size']
+        self.output_size = config['embedder']['emb_size']
+        self.rnn_type = config['model']['rnn_type'].upper()
         self.rnn = eval('nn.' + self.rnn_type)(
             input_size=self.hidden_size,
             hidden_size=self.hidden_size,
-            num_layers=config['layers'],
-            dropout=config['dec_dropout'],
+            num_layers=config['model']['layers'],
+            dropout=config['model']['dec_dropout'],
             bidirectional=False
         )
         self.emb_in = nn.Linear(self.output_size, self.hidden_size)

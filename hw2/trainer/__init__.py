@@ -1,1 +1,1 @@
-from trainer.caption_trainer import CaptionTrainer
+from .caption_trainer import CaptionTrainer

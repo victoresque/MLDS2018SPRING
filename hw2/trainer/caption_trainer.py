@@ -5,12 +5,10 @@ from base.base_trainer import BaseTrainer
 
 
 class CaptionTrainer(BaseTrainer):
-    def __init__(self, model, loss, metrics, data_loader, optimizer, epochs,
-                 save_dir, save_freq, resume, with_cuda, verbosity, config, training_name='',
-                 valid_data_loader=None, train_logger=None, monitor='loss', monitor_mode='min'):
-        super(CaptionTrainer, self).__init__(model, loss, metrics, optimizer, epochs,
-                                             save_dir, save_freq, resume, verbosity, training_name,
-                                             with_cuda, config, train_logger, monitor, monitor_mode)
+    def __init__(self, model, loss, metrics, resume, config,
+                 data_loader, valid_data_loader=None, train_logger=None):
+        super(CaptionTrainer, self).__init__(model, loss, metrics, resume, config, train_logger)
+        self.config = config
         self.batch_size = data_loader.batch_size
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
@@ -55,9 +53,7 @@ class CaptionTrainer(BaseTrainer):
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, (in_seq, target) in enumerate(self.data_loader):
-            targ_seq = target[0]
-            targ_mask = target[1]
-            formatted = target[2]
+            targ_seq, targ_mask, formatted = target
             in_seq, targ_seq, targ_mask = self._to_variable(in_seq, targ_seq, targ_mask)
 
             self.optimizer.zero_grad()
@@ -96,9 +92,7 @@ class CaptionTrainer(BaseTrainer):
         total_val_loss = 0
         total_val_metrics = np.zeros(len(self.metrics))
         for batch_idx, (in_seq, target) in enumerate(self.valid_data_loader):
-            targ_seq = target[0]
-            targ_mask = target[1]
-            formatted = target[2]
+            targ_seq, targ_mask, formatted = target
             in_seq, targ_seq, targ_mask = self._to_variable(in_seq, targ_seq, targ_mask)
 
             out_seq = self.model(in_seq, len(targ_seq))
