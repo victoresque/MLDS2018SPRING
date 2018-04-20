@@ -7,10 +7,10 @@ from torch.autograd import Variable
 
 
 class Decoder(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, emb_size):
         super(Decoder, self).__init__()
         self.hidden_size = config['model']['hidden_size']
-        self.output_size = config['embedder']['emb_size']
+        self.output_size = emb_size
         self.rnn_type = config['model']['rnn_type'].upper()
         self.rnn = eval('nn.' + self.rnn_type)(
             input_size=self.hidden_size,

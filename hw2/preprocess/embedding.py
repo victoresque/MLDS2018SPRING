@@ -58,9 +58,7 @@ class Word2VecEmbedder(BaseEmbedder):
             self.corpus[i].append('<EOS>')
             self.corpus[i].extend(['<PAD>'] * (max_len-len(self.corpus[i])))
 
-        # self.word2vec = Word2Vec.load('w2v.pkl')
         self.word2vec = Word2Vec(self.corpus, size=self.emb_size, min_count=min_count, iter=30, workers=16)
-        self.word2vec.save('w2v.pkl')
 
     def encode_word(self, word):
         if word in self.word2vec.wv:
@@ -110,7 +108,6 @@ class OneHotEmbedder(BaseEmbedder):
     def __init__(self, corpus, config):
         super(OneHotEmbedder, self).__init__(corpus, config)
         self.config = config
-        self.emb_size = config['embedder']['emb_size']
         for line in corpus:
             line = line.replace('.', '').split()
             line = [word.lower() for word in line]
@@ -119,12 +116,12 @@ class OneHotEmbedder(BaseEmbedder):
                     self.frequency[word] = 1
                 else:
                     self.frequency[word] += 1
-        frequency_sorted = sorted(self.frequency, key=self.frequency.get, reverse=True)
-        token_count = len(self.dictionary)
-        for word in frequency_sorted[:self.emb_size - token_count]:
-            self.dictionary[word] = len(self.dictionary)
-            self.word_list.append(word)
-        assert len(self.word_list) == self.emb_size
+        min_count = config['embedder']['min_count']
+        for word, _ in self.frequency.items():
+            if self.frequency[word] >= min_count:
+                self.dictionary[word] = len(self.dictionary)
+                self.word_list.append(word)
+        self.emb_size = len(self.dictionary)
 
     def encode_word(self, word):
         return self.__onehot(self.emb_size, self.dictionary[word])

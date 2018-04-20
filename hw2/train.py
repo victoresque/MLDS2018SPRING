@@ -13,8 +13,7 @@ logging.basicConfig(level=logging.INFO, format='')
 
 # TODO: (important) HW2-2
 # TODO: (important) implement TODOs in seq2seq.py
-# TODO: specify Word2VecEmbedder model path
-# NOTE: currently training target is randomly picked
+
 # NOTE: coding style should follow PEP8
 
 
@@ -22,7 +21,10 @@ def main(config, resume):
     train_logger = Logger()
 
     embedder = eval(config['embedder']['type'])
-    data_loader = CaptionDataLoader(config, embedder, mode='train')
+    data_loader = CaptionDataLoader(config, embedder, mode='train',
+                                    path='datasets/MLDS_hw2_1_data/training_data/',
+                                    embedder_path=os.path.join(config['trainer']['save_dir'],
+                                                               config['name'], 'embedder.pkl'))
     valid_data_loader = data_loader.split_validation()
 
     model = eval(config['arch'])(config, data_loader.embedder)

@@ -3,8 +3,8 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 from model.seq2seq import Seq2Seq
-from data_loader.caption_data_loader import CaptionDataLoader
-from preprocess.embedding import OneHotEmbedder, Word2VecEmbedder
+from data_loader import *
+from preprocess.embedding import *
 from utils.util import ensure_dir
 from utils.beam_search import beam_search
 
@@ -15,7 +15,8 @@ def main(args):
 
     if args.task.lower() == 'caption':
         embedder = eval(config['embedder']['type'])
-        data_loader = CaptionDataLoader(config, embedder, mode='test')
+        data_loader = CaptionDataLoader(config, embedder, mode='test',
+                                        path=args.data_dir, embedder_path=args.embedder_path)
 
         model = Seq2Seq(config, embedder=data_loader.embedder)
         model.load_state_dict(checkpoint['state_dict'])
@@ -53,7 +54,7 @@ def main(args):
             result.extend(out_seq)
 
         ensure_dir('results')
-        with open('results/prediction.txt', 'w') as f:
+        with open(args.output, 'w') as f:
             for video_id, caption in result:
                 caption = postprocess(caption)
                 f.write(video_id+','+caption+'\n')
@@ -83,13 +84,15 @@ if __name__ == '__main__':
                         help='Specify the task to train [caption, chatbot]')
     parser.add_argument('--checkpoint', required=True, type=str,
                         help='model path')
-    parser.add_argument('--data-dir', default='datasets', type=str,
-                        help='directory of training/testing data (default: datasets)')
+    parser.add_argument('--data-dir', required=True, type=str,
+                        help='input data directory')
+    parser.add_argument('--embedder-path', required=True, type=str,
+                        help='path of saved embedder')
+    parser.add_argument('--output', required=True, type=str,
+                        help='output filename')
     parser.add_argument('--no-cuda', action="store_true",
                         help='use CPU instead of GPU')
-    parser.add_argument('--source', default='dataset', type=str,
-                        help='source [dataset, file] (default: dataset)')
-    parser.add_argument('--beam-size', default=3, type=int,
+    parser.add_argument('--beam-size', default=1, type=int,
                         help='beam search size n (default: 1)')
 
     args = parser.parse_args()

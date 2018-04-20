@@ -60,7 +60,7 @@ def cross_entropy2(input, target, mask):
 
 def cross_entropy3(input, target, mask):
     """
-    Average over sequences (each sequence contributes the same)
+    Only average over batch size, does not consider sequence length
 
     input
         type:  Variable
