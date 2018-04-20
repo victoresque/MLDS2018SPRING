@@ -4,12 +4,7 @@ from torch.autograd import Variable
 from base import BaseModel
 from model.modules import Encoder, Decoder
 
-# TODO: Bidirectional
 # TODO: Attention
-# TODO: Scheduled sampling
-# TODO: Teacher forcing
-# TODO: Beam search
-# TODO: (Optional) Stacked attention
 
 
 class Seq2Seq(BaseModel):
@@ -17,7 +12,7 @@ class Seq2Seq(BaseModel):
     Note:
         input:
             type:  Variable
-            shape: 80 x batch size x 4096
+            shape: random length in sample_range x batch size x 4096
         output:
             type:  Variable
             shape: max sequence length in batch x batch size x emb size
@@ -32,7 +27,7 @@ class Seq2Seq(BaseModel):
         self.encoder = Encoder(config)
         self.decoder = Decoder(config)
 
-    def forward(self, in_seq, seq_len):
+    def forward(self, in_seq, seq_len, targ_seq=None):
         enc_out, hidden = self.encoder(in_seq)
-        out_seq = self.decoder(enc_out, hidden, seq_len, self.embedder)
+        out_seq = self.decoder(enc_out, hidden, seq_len, self.embedder, targ_seq)
         return out_seq

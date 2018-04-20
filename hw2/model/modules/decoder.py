@@ -15,14 +15,15 @@ class Decoder(nn.Module):
         self.rnn = eval('nn.' + self.rnn_type)(
             input_size=self.hidden_size,
             hidden_size=self.hidden_size,
-            num_layers=config['model']['layers'],
-            dropout=config['model']['dec_dropout'],
+            num_layers=config['model']['decoder']['layers'],
+            dropout=config['model']['decoder']['dropout'],
             bidirectional=False
         )
+        self.scheduled_sampling = config['model']['scheduled_sampling']
         self.emb_in = nn.Linear(self.output_size, self.hidden_size)
         self.emb_out = nn.Linear(self.hidden_size, self.output_size)
 
-    def forward(self, enc_out, hidden, seq_len, embedder):
+    def forward(self, enc_out, hidden, seq_len, embedder, targ_seq=None):
         """
         Note:
              input/return type/shape refer to seq2seq.py
@@ -39,8 +40,11 @@ class Decoder(nn.Module):
             dec_out, hidden = self.rnn(dec_in, hidden)
             dec_out = self.emb_out(dec_out)
             out_seq.append(dec_out[0])
-            dec_in = embedder.dec_out2dec_in(dec_out)
-            dec_in = Variable(torch.FloatTensor(dec_in))
+            if self.training and np.random.rand() > self.scheduled_sampling:
+                dec_in = targ_seq[i:i+1]
+            else:
+                dec_in = embedder.dec_out2dec_in(dec_out)
+                dec_in = Variable(torch.FloatTensor(dec_in))
 
         out_seq = torch.stack(out_seq)
         return out_seq

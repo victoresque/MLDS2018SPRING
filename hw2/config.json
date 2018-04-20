@@ -1,10 +1,10 @@
 {
-    "name": "0000000000000003",
+    "name": "0000000000000006",
     "task": "caption",
     "cuda": true,
     "embedder": {
         "type": "OneHotEmbedder",
-        "emb_size": 4096
+        "emb_size": 1024
     },
     "data_loader": {
         "data_dir": "datasets/",
@@ -19,9 +19,9 @@
     "optimizer_type": "RMSprop",
     "optimizer": {
         "lr": 0.0001,
-        "weight_decay": 0
+        "weight_decay": 1e-3
     },
-    "loss": "cross_entropy",
+    "loss": "cross_entropy3",
     "metrics": ["bleu"],
     "trainer": {
         "epochs": 1000,
@@ -35,14 +35,17 @@
     "model": {
         "rnn_type": "LSTM",
         "input_size": 4096,
-        "hidden_size": 128,
-        "layers": 2,
-        "enc_dropout": 0.05,
-        "dec_dropout": 0.05,
-        "bidirectional": false,
+        "hidden_size": 256,
+        "encoder": {
+            "layers": 1,
+            "dropout": 0.5,
+            "bidirectional": true
+        },
+        "decoder": {
+            "layers": 2,
+            "dropout": 0.2
+        },
         "attention": false,
-        "teacher_forcing": false,
-        "scheduled_sampling": false,
-        "beam_search": false
+        "scheduled_sampling": 0.5
     }
 }

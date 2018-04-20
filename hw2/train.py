@@ -61,7 +61,7 @@ if __name__ == '__main__':
         config = json.load(open(args.config))
         path = os.path.join(config['trainer']['save_dir'], config['name'])
         if os.path.exists(path):
-            opt = input('Warning: path {} already exists, continue? [Y/n] '.format(path))
+            opt = input('Warning: path {} already exists, continue? [y/N] '.format(path))
             if opt.upper() != 'Y':
                 exit(1)
     assert config is not None

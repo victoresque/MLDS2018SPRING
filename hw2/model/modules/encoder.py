@@ -10,9 +10,9 @@ class Encoder(nn.Module):
         self.rnn = eval('nn.' + self.rnn_type)(
             input_size=config['model']['input_size'],
             hidden_size=config['model']['hidden_size'],
-            num_layers=config['model']['layers'],
-            dropout=config['model']['enc_dropout'],
-            bidirectional=False
+            num_layers=config['model']['encoder']['layers'],
+            dropout=config['model']['encoder']['dropout'],
+            bidirectional=config['model']['encoder']['bidirectional']
         )
 
     def forward(self, in_seq):

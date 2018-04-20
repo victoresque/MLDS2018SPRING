@@ -1,9 +1,6 @@
 import numpy as np
 from gensim.models.word2vec import Word2Vec
 
-# FIXME: all embedders inherited from BaseEmbedder
-# FIXME: pass *args, **kwargs to embedders
-
 
 class BaseEmbedder:
     def __init__(self, corpus, config):
@@ -85,8 +82,8 @@ class Word2VecEmbedder(BaseEmbedder):
             encoded.append(np.array(self.encode_line(line)))
         return encoded
 
-    def decode_word(self, vec):
-        return self.word2vec.wv.most_similar(positive=[vec], topn=1)[0][0]
+    def decode_word(self, word):
+        return self.word2vec.wv.most_similar(positive=[word], topn=1)[0][0]
 
     def decode_line(self, line):
         return [self.decode_word(vec) for vec in line]
@@ -132,21 +129,30 @@ class OneHotEmbedder(BaseEmbedder):
     def encode_word(self, word):
         return self.__onehot(self.emb_size, self.dictionary[word])
 
+    def encode_line(self, line):
+        line = [self.__onehot(self.emb_size,
+                              self.dictionary.get(word, self.dictionary['<UNK>'])) for word in line]
+        return line
+
     def encode_lines(self, lines):
         encoded = []
         for line in lines:
             line = line.replace('.', '').split()
             line = [word.lower() for word in line]
-            line = [self.__onehot(self.emb_size,
-                                  self.dictionary.get(word, self.dictionary['<UNK>'])) for word in line]
-            # line = [self.dictionary.get(word, self.dictionary['<UNK>']) for word in line]
+            line = self.encode_line(line)
             encoded.append(np.array(line))
         return encoded
+
+    def decode_word(self, word):
+        return self.word_list[int(np.argmax(word, 0))]
+
+    def decode_line(self, line):
+        return [self.decode_word(vec) for vec in line]
 
     def decode_lines(self, lines):
         decoded = []
         for line in lines:
-            line = [self.word_list[int(np.argmax(vec, 0))] for vec in line]
+            line = self.decode_line(line)
             line = ' '.join(line)
             line = line.split('<EOS>', 1)[0]
             line = line.split('<PAD>', 1)[0]
@@ -169,12 +175,3 @@ class OneHotEmbedder(BaseEmbedder):
         v = np.zeros((dim,))
         v[label] = 1
         return v
-
-
-if __name__ == '__main__':
-    embedder = OneHotEmbedder(['i am sleeping.', 'she is such a good'], emb_size=12)
-
-    enc = embedder.encode_lines(['i is such', 'a a am sleeping good'])
-    dec = embedder.decode_lines(enc)
-
-    print(dec)

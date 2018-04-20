@@ -149,7 +149,7 @@ if __name__ == "__main__" :
     for item in test:
         score_per_video = []
         captions = [x.rstrip('.') for x in item['caption']]
-        score_per_video.append(BLEU(result[item['id']],captions,True))
+        score_per_video.append(BLEU_(result[item['id']],captions,True))
         bleu.append(score_per_video[0])
     average = sum(bleu) / len(bleu)
     print("Average bleu score is " + str(average))

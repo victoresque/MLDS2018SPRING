@@ -41,7 +41,8 @@ class CaptionTrainer(BaseTrainer):
         print('')
         print(status)
         for i, (k, v) in enumerate(seq.items()):
-            if i == 4: break
+            if i == 4:
+                break
             print('{:30s}'.format(k), v)
         print('')
 
@@ -57,7 +58,7 @@ class CaptionTrainer(BaseTrainer):
             in_seq, targ_seq, targ_mask = self._to_variable(in_seq, targ_seq, targ_mask)
 
             self.optimizer.zero_grad()
-            out_seq = self.model(in_seq, len(targ_seq))
+            out_seq = self.model(in_seq, len(targ_seq), targ_seq)
             loss = self.loss(out_seq, targ_seq, targ_mask)
             loss.backward()
             self.optimizer.step()
