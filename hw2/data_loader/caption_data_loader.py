@@ -22,8 +22,9 @@ class CaptionDataLoader(BaseDataLoader):
         self.sample_range = config['data_loader']['sample_range']
         self.__parse_dataset(path, embedder, embedder_path)
         self.out_seq = [self.embedder.encode_lines(seq) for seq in self.out_seq]
-        ensure_dir(os.path.dirname(embedder_path))
-        pickle.dump(self.embedder, open(embedder_path, 'wb'))
+        if mode == 'train':
+            ensure_dir(os.path.dirname(embedder_path))
+            pickle.dump(self.embedder, open(embedder_path, 'wb'))
 
     def __parse_dataset(self, path, embedder, embedder_path):
         self.video_ids = []
@@ -34,7 +35,10 @@ class CaptionDataLoader(BaseDataLoader):
             corpus_labels = labels
             for _, captions in corpus_labels.items():
                 self.corpus.extend(captions)
-            self.embedder = embedder(self.corpus, self.config)
+            if os.path.exists(embedder_path):
+                self.embedder = pickle.load(open(embedder_path, 'rb'))
+            else:
+                self.embedder = embedder(self.corpus, self.config)
         else:
             features = self.__load_features(os.path.join(path, 'feat'))
             labels = self.__load_labels(os.path.join(path, '../testing_label.json'))

@@ -42,9 +42,10 @@
         },
         "decoder": {
             "layers": 2,
-            "dropout": 0.2
+            "dropout": 0.2,
+            "attnkey_dropout": 0.2
         },
-        "attention": false,
+        "attention": true,
         "scheduled_sampling": 0.5
     }
 }
