@@ -6,10 +6,10 @@ class BaseDataLoader:
     """
     Base class for all data loaders
     """
-    def __init__(self, config):
+    def __init__(self, config, shuffle, batch_size):
         self.config = config
-        self.batch_size = config['data_loader']['batch_size']
-        self.shuffle = config['data_loader']['shuffle']
+        self.batch_size = batch_size
+        self.shuffle = shuffle
         self.batch_idx = 0
 
     def __iter__(self):

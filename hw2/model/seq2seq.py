@@ -2,9 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from base import BaseModel
-from model.modules import Encoder, Decoder, Decoder_keyattn
-
-# TODO: Attention
+from .modules import Encoder, Decoder, DecoderAttn
 
 
 class Seq2Seq(BaseModel):
@@ -20,17 +18,15 @@ class Seq2Seq(BaseModel):
     def __init__(self, config, embedder):
         super(Seq2Seq, self).__init__(config)
         self.input_size = config['model']['input_size']
-        self.hidden_size = config['model']['hidden_size']
         self.embedder = embedder
-        self.emb_size = embedder.emb_size
         self.rnn_type = config['model']['rnn_type'].upper()
         self.encoder = Encoder(config)
         if config['model']['attention']:
-            self.decoder = Decoder_keyattn(config, self.emb_size)
+            self.decoder = DecoderAttn(config, self.embedder)
         else:
-            self.decoder = Decoder(config, self.emb_size)
+            self.decoder = Decoder(config, self.embedder)
 
     def forward(self, in_seq, seq_len, targ_seq=None):
         enc_out, hidden = self.encoder(in_seq)
-        out_seq = self.decoder(enc_out, hidden, seq_len, self.embedder, targ_seq)
+        out_seq = self.decoder(enc_out, hidden, seq_len, targ_seq)
         return out_seq

@@ -7,10 +7,11 @@ from torch.autograd import Variable
 
 
 class Decoder(nn.Module):
-    def __init__(self, config, emb_size):
+    def __init__(self, config, embedder):
         super(Decoder, self).__init__()
         self.hidden_size = config['model']['hidden_size']
-        self.output_size = emb_size
+        self.embedder = embedder
+        self.output_size = embedder.emb_size
         self.rnn_type = config['model']['rnn_type'].upper()
         self.rnn = eval('nn.' + self.rnn_type)(
             input_size=self.hidden_size,
@@ -23,19 +24,18 @@ class Decoder(nn.Module):
         self.emb_in = nn.Linear(self.output_size, self.hidden_size)
         self.emb_out = nn.Linear(self.hidden_size, self.output_size)
 
-    def forward(self, enc_out, hidden, seq_len, embedder, targ_seq=None):
+    def forward(self, enc_out, hidden, seq_len, targ_seq=None):
         """
         Note:
              input/return type/shape refer to seq2seq.py
         """
         out_seq = []
-        bos = embedder.encode_word('<BOS>')
+        bos = self.embedder.encode_word('<BOS>')
         n_batch = hidden[0].data.shape[1] if self.rnn_type == 'LSTM' else hidden.data.shape[1]
         dec_in = Variable(torch.FloatTensor(np.array([[bos for _ in range(n_batch)]])))
         with_cuda = next(self.parameters()).is_cuda
 
         for i in range(seq_len):
-            
             dec_in = dec_in.cuda() if with_cuda else dec_in
             dec_in = self.emb_in(dec_in)
             dec_out, hidden = self.rnn(dec_in, hidden)
@@ -44,17 +44,19 @@ class Decoder(nn.Module):
             if self.training and np.random.rand() > self.scheduled_sampling:
                 dec_in = targ_seq[i:i+1]
             else:
-                dec_in = embedder.dec_out2dec_in(dec_out)
+                dec_in = self.embedder.dec_out2dec_in(dec_out)
                 dec_in = Variable(torch.FloatTensor(dec_in))
 
         out_seq = torch.stack(out_seq)
         return out_seq
-    
-class Decoder_keyattn(nn.Module):
-    def __init__(self, config, emb_size):
-        super(Decoder_keyattn, self).__init__()
+
+
+class DecoderAttn(nn.Module):
+    def __init__(self, config, embedder):
+        super(DecoderAttn, self).__init__()
         self.hidden_size = config['model']['hidden_size']
-        self.output_size = emb_size
+        self.embedder = embedder
+        self.output_size = embedder.emb_size
         self.rnn_type = config['model']['rnn_type'].upper()
         self.rnn = eval('nn.' + self.rnn_type)(
             input_size=self.hidden_size,
@@ -76,13 +78,13 @@ class Decoder_keyattn(nn.Module):
         )
         self.z_0 = nn.Parameter(torch.rand(1, 1, config['model']['hidden_size']), requires_grad=True)
 
-    def forward(self, enc_out, hidden, seq_len, embedder, targ_seq=None):
+    def forward(self, enc_out, hidden, seq_len, targ_seq=None):
         """
         Note:
              input/return type/shape refer to seq2seq.py
         """
         out_seq = []
-        bos = embedder.encode_word('<BOS>')
+        bos = self.embedder.encode_word('<BOS>')
         n_batch = hidden[0].data.shape[1] if self.rnn_type == 'LSTM' else hidden.data.shape[1]
         dec_in = Variable(torch.FloatTensor(np.array([[bos for _ in range(n_batch)]])))
         with_cuda = next(self.parameters()).is_cuda
@@ -91,10 +93,9 @@ class Decoder_keyattn(nn.Module):
         key_hidden = hidden
 
         for i in range(seq_len):
-            
             z_seq = z_batch.repeat(enc_out.size(0), 1, 1)
             attn_weight = F.cosine_similarity(z_seq, enc_out, dim=2)
-            #attn_weight = F.softmax(attn_weight, dim=0)
+            # attn_weight = F.softmax(attn_weight, dim=0)
             attn_weight = attn_weight.view(*attn_weight.size(),1)
             attn_weight_repeat = attn_weight.repeat(1,1,self.hidden_size)
             attn_out = attn_weight_repeat.mul(enc_out)
@@ -113,7 +114,7 @@ class Decoder_keyattn(nn.Module):
             if self.training and np.random.rand() > self.scheduled_sampling:
                 dec_in = targ_seq[i:i+1]
             else:
-                dec_in = embedder.dec_out2dec_in(dec_out)
+                dec_in = self.embedder.dec_out2dec_in(dec_out)
                 dec_in = Variable(torch.FloatTensor(dec_in))
 
         out_seq = torch.stack(out_seq)

@@ -1,0 +1,53 @@
+{
+    "name": "seq2seq00000001",
+    "task": "caption",
+    "cuda": true,
+    "embedder": {
+        "type": "OneHotEmbedder",
+        "min_count": 6
+    },
+    "data_loader": {
+        "batch_size": 8,
+        "sample_range": [20, 80],
+        "shuffle": true,
+        "unique": false,
+        "weight_policy": "bool"
+    },
+    "validation": {
+        "validation_split": 0.1,
+        "shuffle": true
+    },
+    "optimizer_type": "RMSprop",
+    "optimizer": {
+        "lr": 0.0001,
+        "weight_decay": 0
+    },
+    "loss": "cross_entropy",
+    "metrics": ["bleu"],
+    "trainer": {
+        "epochs": 1000,
+        "save_dir": "saved/",
+        "save_freq": 10,
+        "verbosity": 2,
+        "monitor": "val_loss",
+        "monitor_mode": "min"
+    },
+    "arch": "Seq2Seq",
+    "model": {
+        "rnn_type": "LSTM",
+        "input_size": 4096,
+        "hidden_size": 256,
+        "encoder": {
+            "layers": 2,
+            "dropout": 0.4,
+            "bidirectional": false
+        },
+        "decoder": {
+            "layers": 2,
+            "dropout": 0.4,
+            "attnkey_dropout": 0.2
+        },
+        "attention": false,
+        "scheduled_sampling": 0.4
+    }
+}

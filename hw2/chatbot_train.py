@@ -5,16 +5,11 @@ from model.seq2seq import Seq2Seq
 from model.loss import *
 from model.metric import *
 from data_loader import *
-from trainer import CaptionTrainer
+from trainer import ChatbotTrainer
 from preprocess.embedding import *
 from logger import Logger
 
 logging.basicConfig(level=logging.INFO, format='')
-
-# TODO: (important) HW2-2
-# TODO: (important) implement TODOs in seq2seq.py
-
-# NOTE: coding style should follow PEP8
 
 
 def main(config, resume):
@@ -33,7 +28,7 @@ def main(config, resume):
     loss = eval(config['loss'])
     metrics = [eval(metric) for metric in config['metrics']]
 
-    trainer = CaptionTrainer(model, loss, metrics,
+    trainer = ChatbotTrainer(model, loss, metrics,
                              resume=resume,
                              config=config,
                              data_loader=data_loader,
