@@ -1,21 +1,22 @@
 {
-    "name": "chatbot00001",
+    "name": "chatbot00002",
     "task": "chatbot",
     "cuda": true,
     "embedder": {
-        "type": "ChineseOneHotEmbedder",
+        "type": "ChineseOneHotEmbedder"
     },
     "data_loader": {
-        "batch_size": 8,
-        "shuffle": true,
+        "batch_size": 32,
+        "train_seq_count": 100000,
+        "shuffle": true
     },
     "validation": {
         "validation_split": 0.1,
         "shuffle": true
     },
-    "optimizer_type": "RMSprop",
+    "optimizer_type": "Adam",
     "optimizer": {
-        "lr": 0.0001,
+        "lr": 0.001,
         "weight_decay": 0
     },
     "loss": "cross_entropy",
@@ -31,7 +32,7 @@
     "arch": "Seq2Seq",
     "model": {
         "rnn_type": "LSTM",
-        "input_size": 4096,
+        "input_size": 1024,
         "hidden_size": 256,
         "encoder": {
             "layers": 2,

@@ -8,7 +8,7 @@ from utils.util import ensure_dir
 
 
 class ChatbotDataLoader(BaseDataLoader):
-    def __init__(self, config, embedder, mode, path, embedder_path):
+    def __init__(self, config, embedder, mode, path, embedder_path, vocab_path):
         assert mode == 'train' or mode == 'test'
         if mode == 'train':
             shuffle = config['data_loader']['shuffle']
@@ -20,16 +20,16 @@ class ChatbotDataLoader(BaseDataLoader):
         self.mode = mode
         self.in_seq = []
         self.out_seq = []
-        self.__parse_dataset(path, embedder, embedder_path)
+        self.__parse_dataset(path, embedder, embedder_path, vocab_path)
 
         if mode == 'train':
             ensure_dir(os.path.dirname(embedder_path))
             pickle.dump(self.embedder, open(embedder_path, 'wb'))
 
-    def __parse_dataset(self, path, embedder, embedder_path):
+    def __parse_dataset(self, path, embedder, embedder_path, vocab_path):
         if self.mode == 'train':
             self.corpus = self.__load_corpus(os.path.join(path, 'clr_conversation.txt'))
-            self.embedder = embedder(self.corpus, self.config)
+            self.embedder = embedder(self.corpus, vocab_path, self.config)
             for i in range(len(self.corpus)-1):
                 if self.corpus[i] != '+++$+++' and self.corpus[i+1] != '+++$+++':
                     self.in_seq.append(self.corpus[i])
@@ -38,12 +38,9 @@ class ChatbotDataLoader(BaseDataLoader):
             pack = list(zip(self.in_seq, self.out_seq))
             random.shuffle(pack)
             self.in_seq, self.out_seq = zip(*pack)
-            mmmmmm = 100000
-            self.in_seq = self.in_seq[:mmmmmm]
-            self.out_seq = self.out_seq[:mmmmmm]
-            self.in_seq = self.embedder.encode_lines(self.in_seq)
-            self.out_seq = self.embedder.encode_lines(self.out_seq)
-
+            seq_cnt = self.config['data_loader']['train_seq_count']
+            self.in_seq = self.in_seq[:seq_cnt]
+            self.out_seq = self.out_seq[:seq_cnt]
             ensure_dir(os.path.dirname(embedder_path))
             pickle.dump(self.embedder, open(embedder_path, 'wb'))
         else:
@@ -70,6 +67,9 @@ class ChatbotDataLoader(BaseDataLoader):
         """
         batch = super(ChatbotDataLoader, self).__next__()
         in_seq_batch, out_seq_batch = batch
+
+        in_seq_batch = self.embedder.encode_lines(in_seq_batch)
+        out_seq_batch = self.embedder.encode_lines(out_seq_batch)
 
         in_seq_batch = self.__pad_in(in_seq_batch, self.embedder.encode_word('<PAD>'))
         out_seq_batch, out_seq_weight = self.__pad_out(out_seq_batch,
@@ -105,13 +105,15 @@ class ChatbotDataLoader(BaseDataLoader):
 
         corpus:
             list of sentences
-            each sentence is a list of chinese characters
+            each sentence is a str of chinese characters
         """
         with open(path, encoding='utf-8') as f:
             corpus = f.readlines()
         for i, line in enumerate(corpus):
             line = line.rstrip(' \n')
-            corpus[i] = ''.join(line.split())
+            line = ''.join(line.split())
+            line = [word for word in line]
+            corpus[i] = line
         return corpus
 
     def __pad_in(self, batch, pad_val):
@@ -140,11 +142,8 @@ class ChatbotDataLoader(BaseDataLoader):
             else:
                 batch[i] = seq
 
-            weight_policy = self.config['data_loader']['weight_policy']
-            assert weight_policy == 'bool'
-            if weight_policy == 'bool':
-                for j, word in enumerate(seq):
-                    weight[i][j] = 1
+            for j, word in enumerate(seq):
+                weight[i][j] = 1
 
         return batch, weight
 

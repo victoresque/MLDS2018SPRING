@@ -191,12 +191,12 @@ class OneHotEmbedder(BaseEmbedder):
 
 
 class ChineseOneHotEmbedder(BaseEmbedder):
-    def __init__(self, corpus, config):
+    def __init__(self, corpus, vocab_path, config):
         super(ChineseOneHotEmbedder, self).__init__(corpus, config)
         self.config = config
         self.word_list = dict()
-        with open('../datasets/MLDS_hw2_2_data/eval/language_model/vocab.txt') as f:
-            emb_size = 1024
+        with open(vocab_path) as f:
+            emb_size = 2048
             for i, line in enumerate(f):
                 if i == emb_size:
                     break
@@ -205,6 +205,7 @@ class ChineseOneHotEmbedder(BaseEmbedder):
                 self.dictionary[word] = index
                 self.word_list[index] = word
         self.emb_size = len(self.dictionary)
+        config['model']['input_size'] = self.emb_size
 
     def encode_word(self, word):
         return self.__onehot(self.emb_size, self.dictionary[word])

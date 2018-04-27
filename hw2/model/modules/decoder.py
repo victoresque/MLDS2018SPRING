@@ -41,6 +41,7 @@ class Decoder(nn.Module):
             dec_out, hidden = self.rnn(dec_in, hidden)
             dec_out = self.emb_out(dec_out)
             out_seq.append(dec_out[0])
+            dec_out = F.tanh(dec_out)
             if self.training and np.random.rand() > self.scheduled_sampling:
                 dec_in = targ_seq[i:i+1]
             else:

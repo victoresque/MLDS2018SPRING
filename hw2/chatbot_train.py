@@ -16,17 +16,19 @@ def main(config, resume):
     train_logger = Logger()
 
     embedder = eval(config['embedder']['type'])
-    data_loader = CaptionDataLoader(config, embedder, mode='train',
-                                    path='datasets/MLDS_hw2_1_data/training_data/',
+    data_loader = ChatbotDataLoader(config, embedder, mode='train',
+                                    path='datasets/MLDS_hw2_2_data/training_data/',
                                     embedder_path=os.path.join(config['trainer']['save_dir'],
-                                                               config['name'], 'embedder.pkl'))
+                                                               config['name'], 'embedder.pkl'),
+                                    vocab_path='preprocess/vocab.txt')
     valid_data_loader = data_loader.split_validation()
 
     model = eval(config['arch'])(config, data_loader.embedder)
     model.summary()
 
     loss = eval(config['loss'])
-    metrics = [eval(metric) for metric in config['metrics']]
+    metrics = []
+    # metrics = [eval(metric) for metric in config['metrics']]
 
     trainer = ChatbotTrainer(model, loss, metrics,
                              resume=resume,

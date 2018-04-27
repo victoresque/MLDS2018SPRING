@@ -37,20 +37,16 @@ class ChatbotTrainer(BaseTrainer):
         '''
 
     def _show_seq(self, seq, status):
-        pass
-        '''
         seq = np.array([s.data.cpu().numpy() for s in seq])
         seq = np.transpose(seq, (1, 0, 2))
         seq = self.data_loader.embedder.decode_lines(seq)
-        seq = dict((fmt[j]['id'], line) for j, line in enumerate(seq))
         print('')
         print(status)
-        for i, (k, v) in enumerate(seq.items()):
+        for i, s in enumerate(seq):
             if i == 4:
                 break
-            print('{:30s}'.format(k), v)
+            print(s)
         print('')
-        '''
 
     def _train_epoch(self, epoch):
         self.model.train()
@@ -70,7 +66,7 @@ class ChatbotTrainer(BaseTrainer):
             self.optimizer.step()
 
             total_loss += loss.data[0]
-            total_metrics += self._eval_metrics(out_seq, targ_seq)
+            # total_metrics += self._eval_metrics(out_seq, targ_seq)
 
             if batch_idx == 0:
                 self._show_seq(out_seq, 'train')
@@ -105,7 +101,7 @@ class ChatbotTrainer(BaseTrainer):
             out_seq = self.model(in_seq, len(targ_seq))
             loss = self.loss(out_seq, targ_seq, targ_weight)
             total_val_loss += loss.data[0]
-            total_val_metrics += self._eval_metrics(out_seq, targ_seq)
+            # total_val_metrics += self._eval_metrics(out_seq, targ_seq)
 
             if batch_idx == 0:
                 self._show_seq(out_seq, 'valid')
