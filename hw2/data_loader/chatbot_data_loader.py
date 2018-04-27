@@ -107,13 +107,14 @@ class ChatbotDataLoader(BaseDataLoader):
             list of sentences
             each sentence is a str of chinese characters
         """
+        corpus = []
         with open(path, encoding='utf-8') as f:
-            corpus = f.readlines()
-        for i, line in enumerate(corpus):
-            line = line.rstrip(' \n')
-            line = ''.join(line.split())
-            line = [word for word in line]
-            corpus[i] = line
+            for i, line in enumerate(f):
+                line = line.rstrip(' \n')
+                line = ''.join(line.split())
+                line = [word for word in line]
+                if len(line) > 0:
+                    corpus.append(line)
         return corpus
 
     def __pad_in(self, batch, pad_val):
