@@ -33,7 +33,7 @@ class Seq2Seq(BaseModel):
     # targ_idx for bias distribution over time
     # targ_seq for teacher forcing / scheduled sampling
     def forward(self, in_seq, seq_len, targ_seq=None, targ_idx=None, epoch=None):
-        if targ_idx is None: targ_idx = np.array([seq_len//2])
+        if targ_idx is None: targ_idx = np.array([in_seq.size(0)//2])
         enc_out, hidden = self.encoder(in_seq)
         
         bos = self.embedder.encode_word('<BOS>')

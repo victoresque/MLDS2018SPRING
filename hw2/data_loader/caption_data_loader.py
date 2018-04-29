@@ -89,7 +89,7 @@ class CaptionDataLoader(BaseDataLoader):
         for seq in out_seqs_batch:
             random_idx = np.random.randint(len(seq))
             out_seq_batch.append(seq[random_idx])
-            out_seq_idx.append(random_idx)
+            out_seq_idx.append(len(in_seq_batch[0])*random_idx/len(seq))
         """
             out_seq_idx:
                 type:   list
