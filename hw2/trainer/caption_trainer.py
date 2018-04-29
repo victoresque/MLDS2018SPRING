@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 from base.base_trainer import BaseTrainer
+import sys
 
 
 class CaptionTrainer(BaseTrainer):
@@ -50,15 +51,17 @@ class CaptionTrainer(BaseTrainer):
         self.model.train()
         if self.with_cuda:
             self.model.cuda()
+        
+        print("========================================================================")
 
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, (in_seq, target) in enumerate(self.data_loader):
-            targ_seq, targ_weight, formatted = target
+            targ_seq, targ_idx, targ_weight, formatted = target
             in_seq, targ_seq, targ_weight = self._to_variable(in_seq, targ_seq, targ_weight)
 
             self.optimizer.zero_grad()
-            out_seq = self.model(in_seq, len(targ_seq), targ_seq)
+            out_seq = self.model(in_seq, len(targ_seq), targ_seq, targ_idx, epoch)
             loss = self.loss(out_seq, targ_seq, targ_weight)
             loss.backward()
             self.optimizer.step()
@@ -68,15 +71,14 @@ class CaptionTrainer(BaseTrainer):
 
             if batch_idx == 0:
                 self._show_seq(out_seq, formatted, 'train')
+                self._show_seq(targ_seq, formatted, 'train_ground_truth')
 
-            if self.verbosity >= 2 and batch_idx % self.log_step == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
-                    epoch,
-                    batch_idx * self.data_loader.batch_size,
-                    len(self.data_loader) * self.data_loader.batch_size,
-                    100.0 * batch_idx / len(self.data_loader),
-                    loss.data[0]))
-
+            if self.verbosity >= 2:
+                if batch_idx == 0: log_length = 0
+                log_length = self.__print_status(epoch, batch_idx, batch_idx * in_seq.size(1),
+                                                 len(self.data_loader) * in_seq.size(1),
+                                                 loss.data[0], log_length)
+                
         log = {
             'loss': total_loss / len(self.data_loader),
             'metrics': (total_metrics / len(self.data_loader)).tolist()
@@ -85,6 +87,7 @@ class CaptionTrainer(BaseTrainer):
         if self.valid:
             val_log = self._valid_epoch()
             log = {**log, **val_log}
+        
 
         return log
 
@@ -93,7 +96,7 @@ class CaptionTrainer(BaseTrainer):
         total_val_loss = 0
         total_val_metrics = np.zeros(len(self.metrics))
         for batch_idx, (in_seq, target) in enumerate(self.valid_data_loader):
-            targ_seq, targ_weight, formatted = target
+            targ_seq, targ_idx, targ_weight, formatted = target
             in_seq, targ_seq, targ_weight = self._to_variable(in_seq, targ_seq, targ_weight)
 
             out_seq = self.model(in_seq, len(targ_seq))
@@ -103,8 +106,22 @@ class CaptionTrainer(BaseTrainer):
 
             if batch_idx == 0:
                 self._show_seq(out_seq, formatted, 'valid')
+                self._show_seq(targ_seq, formatted, 'valid_ground_truth')
 
         return {
             'val_loss': total_val_loss / len(self.valid_data_loader),
             'val_metrics': (total_val_metrics / len(self.valid_data_loader)).tolist()
         }
+    
+    def __print_status(self, epoch, batch_idx, n_trained, n_data, loss, pre_log_length):
+        if batch_idx != 0:
+            sys.stdout.write("\b"*pre_log_length) 
+            sys.stdout.flush()
+            
+        log_msg = 'Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
+            epoch, n_trained, n_data, 100.0 * n_trained / n_data, loss)
+        sys.stdout.write(log_msg)
+        sys.stdout.flush()
+        
+        return len(log_msg)
+

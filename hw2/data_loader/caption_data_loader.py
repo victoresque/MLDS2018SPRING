@@ -34,9 +34,14 @@ class CaptionDataLoader(BaseDataLoader):
             corpus_labels = labels
             for _, captions in corpus_labels.items():
                 self.corpus.extend(captions)
-            self.embedder = embedder(self.corpus, self.config)
-            ensure_dir(os.path.dirname(embedder_path))
-            pickle.dump(self.embedder, open(embedder_path, 'wb'))
+            
+            if not os.path.exists(embedder_path):
+                self.embedder = embedder(self.corpus, self.config)
+                ensure_dir(os.path.dirname(embedder_path))
+                pickle.dump(self.embedder, open(embedder_path, 'wb'))
+            else:
+                self.embedder = pickle.load(open(embedder_path, 'rb'))
+                
         else:
             features = self.__load_features(os.path.join(path, 'feat'))
             labels = self.__load_labels(os.path.join(path, '../testing_label.json'))
@@ -72,7 +77,7 @@ class CaptionDataLoader(BaseDataLoader):
                 input, (output, ...)
         """
         batch = super(CaptionDataLoader, self).__next__()
-        in_seq_batch, out_seq_batch, formatted_batch = batch
+        in_seq_batch, out_seqs_batch, formatted_batch = batch
 
         sample_count = np.random.randint(self.sample_range[0], self.sample_range[1]+1)
         for i, seq in enumerate(in_seq_batch):
@@ -80,19 +85,31 @@ class CaptionDataLoader(BaseDataLoader):
             in_seq_batch[i] = [seq[idx] for idx in rand_idx]
 
         # pick random sequence as target
-        out_seq_batch = [random.choice(seq) for seq in out_seq_batch]
+        out_seq_batch, out_seq_idx = [], []
+        for seq in out_seqs_batch:
+            random_idx = np.random.randint(len(seq))
+            out_seq_batch.append(seq[random_idx])
+            out_seq_idx.append(random_idx)
+        """
+            out_seq_idx:
+                type:   list
+                shape:  batch size
+                note:   randomly chosen index of caption of the according video
+        """
         # pick first sequence as target
         # out_seq_batch = [seq[0] for seq in out_seq_batch]
 
         out_seq_batch, out_seq_weight = self.__pad_batch(out_seq_batch,
                                                          self.embedder.encode_word('<PAD>'),
                                                          self.embedder.encode_word('<EOS>'))
-
+        
         in_seq_batch = np.array(in_seq_batch).transpose((1, 0, 2))
         out_seq_batch = np.array(out_seq_batch).transpose((1, 0, 2))
         out_seq_weight = np.array(out_seq_weight).transpose((1, 0))
+        out_seq_idx = np.array(out_seq_idx)
+            
         if self.mode == 'train':
-            return in_seq_batch, (out_seq_batch, out_seq_weight, formatted_batch)
+            return in_seq_batch, (out_seq_batch, out_seq_idx, out_seq_weight, formatted_batch)
         else:
             return in_seq_batch, formatted_batch
 

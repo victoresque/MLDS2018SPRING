@@ -166,9 +166,10 @@ class OneHotEmbedder(BaseEmbedder):
         decoded = []
         for line in lines:
             line = self.decode_line(line)
+            line = list(filter(lambda x: x != '<EOS>' and x != '<PAD>', line))
             line = ' '.join(line)
-            line = line.split('<EOS>', 1)[0]
-            line = line.split('<PAD>', 1)[0]
+            #line = line.split('<EOS>', 1)[0]
+            #line = line.split('<PAD>', 1)[0]
             line = line.split()
             if len(line) == 0:
                 line = ['a']

@@ -1,30 +1,53 @@
 import numpy as np
+import torch
+from torch.autograd import Variable
 from preprocess.embedding import OneHotEmbedder
 
 
-def beam_search(out_seq, n):
+def beam_search(model, embedder, in_seq, seq_len, beam_size):
     """
         out_seq:
             type:  Variable
             shape: batch size x max sequence length in batch x emb size
     """
 
-    max_prob_idx = np.argsort(-out_seq[0], axis=1)[::, :n]
-    possible_prob = out_seq[0][0][max_prob_idx[0]]
-    possible_idx = [(idx,) for idx in max_prob_idx[0]]
-
-    for k, word_prob_idx in enumerate(max_prob_idx):
-        if k == 0:
-            continue
-        word_prob = (out_seq[0][k][word_prob_idx])
-        possible_prob = [i * w for i in possible_prob for w in word_prob]
-        possible_idx = [i+(j,) for i in possible_idx for j in max_prob_idx[k]]
-        sorted_idx = sorted(range(len(possible_prob)), key=lambda l: possible_prob[l], reverse=True)
-        possible_prob = [possible_prob[idx] for idx in sorted_idx[:n]]
-        possible_idx = [possible_idx[idx] for idx in sorted_idx[:n]]
-
-    """
-        possible_idx:
-            type: tuple in list [(seq),(seq)]
-    """
-    return possible_idx
+    encoder = model.encoder
+    decoder = model.decoder
+    bos = embedder.encode_word('<BOS>')
+    emb_size = bos.shape[0]
+    dec_in = Variable(torch.FloatTensor(np.array([bos])))
+    dec_in = dec_in.view(1,*dec_in.size())
+    
+    enc_out, hidden = encoder(in_seq)
+    if model.attn:
+        hiddens = (hidden, hidden)
+        z_0 = model.z_0
+        z_batch = z_0.repeat(enc_out.size(1), 1)
+        result = np.zeros((1,0,emb_size))
+        targ_idx = np.array([seq_len//2])
+    
+        stack0, stack1 = [], [(1, dec_in, z_batch, hiddens, result)]
+        for i in range(seq_len):
+            stack0 = stack1
+            stack1 = []
+            while stack0:
+                prob, dec_in, z_batch, hiddens, result = stack0.pop()
+                (out_seq, z_batch), hiddens = decoder(enc_out, dec_in, z_batch, hiddens, 1, targ_idx)
+                out_seq_flatten = out_seq.data.cpu().numpy().flatten()
+                out_seq_flatten_argsorted = np.flip(out_seq_flatten.argsort(axis=0), axis=0)
+                for j in range(beam_size):
+                    word_idx = out_seq_flatten_argsorted[j]
+                    dec_in = np.zeros((1,1,emb_size))
+                    dec_in[0][0][word_idx] = 1
+                    node_result = np.concatenate((result, dec_in), axis=1)
+                    
+                    dec_in = Variable(torch.FloatTensor(dec_in))
+                    if next(model.parameters()).is_cuda: dec_in = dec_in.cuda()
+                    stack1.append((prob*out_seq_flatten[word_idx], dec_in, z_batch, hiddens, node_result))
+            sorted(stack1, key=lambda x: x[0], reverse=True)
+            stack1 = stack1[:beam_size]
+    
+    for i in stack1:
+        print(embedder.decode_lines(i[4]))
+    
+    return stack1[0][4]
