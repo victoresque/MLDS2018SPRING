@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch.autograd import Variable
+import torch.nn.functional as F
 from preprocess.embedding import OneHotEmbedder
 
 
@@ -24,7 +25,7 @@ def beam_search(model, embedder, in_seq, seq_len, beam_size):
         z_0 = model.z_0
         z_batch = z_0.repeat(enc_out.size(1), 1)
         result = np.zeros((1,0,emb_size))
-        targ_idx = np.array([seq_len//2])
+        targ_idx = np.array([enc_out.size(0)/2])
     
         stack0, stack1 = [], [(1, dec_in, z_batch, hiddens, result)]
         for i in range(seq_len):
@@ -33,7 +34,7 @@ def beam_search(model, embedder, in_seq, seq_len, beam_size):
             while stack0:
                 prob, dec_in, z_batch, hiddens, result = stack0.pop()
                 (out_seq, z_batch), hiddens = decoder(enc_out, dec_in, z_batch, hiddens, 1, targ_idx)
-                out_seq_flatten = out_seq.data.cpu().numpy().flatten()
+                out_prob_flatten = F.softmax(out_seq, dim=-1).data.cpu().numpy().flatten()
                 out_seq_flatten_argsorted = np.flip(out_seq_flatten.argsort(axis=0), axis=0)
                 for j in range(beam_size):
                     word_idx = out_seq_flatten_argsorted[j]
