@@ -60,7 +60,7 @@ class ChatbotTrainer(BaseTrainer):
             in_seq, targ_seq, targ_weight = self._to_variable(in_seq, targ_seq, targ_weight)
 
             self.optimizer.zero_grad()
-            out_seq = self.model(in_seq, len(targ_seq), targ_seq)
+            out_seq = self.model(in_seq, len(targ_seq), targ_seq, epoch=epoch)
             loss = self.loss(out_seq, targ_seq, targ_weight)
             loss.backward()
             self.optimizer.step()

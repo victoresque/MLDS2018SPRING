@@ -1,13 +1,13 @@
 {
-    "name": "chatbot00002",
+    "name": "chatbot00001",
     "task": "chatbot",
     "cuda": true,
     "embedder": {
         "type": "ChineseOneHotEmbedder"
     },
     "data_loader": {
-        "batch_size": 32,
-        "train_seq_count": 100000,
+        "batch_size": 64,
+        "train_seq_count": 40000,
         "shuffle": true
     },
     "validation": {
@@ -44,7 +44,7 @@
             "dropout": 0.2,
             "attnkey_dropout": 0.2
         },
-        "attention": false,
+        "attention": true,
         "scheduled_sampling": 0.2
     }
 }

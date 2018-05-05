@@ -80,7 +80,7 @@ class DecoderAttn(nn.Module):
         self.key_out = nn.Linear(self.hidden_size, self.hidden_size)
         
 
-    def forward(self, enc_out, dec_in, z_batch, hiddens, seq_len, targ_idx, epoch=None, targ_seq=None):
+    def forward(self, enc_out, dec_in, z_batch, hiddens, seq_len, targ_idx=None, epoch=None, targ_seq=None):
         """
         Note:
              input/return type/shape refer to seq2seq.py
@@ -88,10 +88,10 @@ class DecoderAttn(nn.Module):
         out_seq = []
         with_cuda = next(self.parameters()).is_cuda
         
-        mu_array = targ_idx
-        bias_prob = [poisson.pmf(idx, mu_array) for idx in np.arange(enc_out.size(0))]
-        bias_prob = Variable(torch.FloatTensor(np.array(bias_prob))) #(seq_length, batch)
-        bias_prob = bias_prob.cuda() if with_cuda else bias_prob
+        # mu_array = targ_idx
+        # bias_prob = [poisson.pmf(idx, mu_array) for idx in np.arange(enc_out.size(0))]
+        # bias_prob = Variable(torch.FloatTensor(np.array(bias_prob))) #(seq_length, batch)
+        # bias_prob = bias_prob.cuda() if with_cuda else bias_prob
         hidden_d, hidden_k = hiddens
 
         for i in range(seq_len):
@@ -99,8 +99,8 @@ class DecoderAttn(nn.Module):
             z_batch = z_batch.view(1, *z_batch.size())
             z_seq = z_batch.repeat(enc_out.size(0), 1, 1)
             attn_weight = F.cosine_similarity(z_seq, enc_out, dim=2) #(seq_length, batch)
-            attn_weight = attn_weight.mul(bias_prob)
-            #attn_weight = F.softmax(attn_weight, dim=0)
+            # attn_weight = attn_weight.mul(bias_prob)
+            attn_weight = F.softmax(attn_weight, dim=0)
             attn_weight = attn_weight.view(*attn_weight.size(),1) #(seq_length, batch, 1)
             attn_weight_repeat = attn_weight.repeat(1,1,self.hidden_size) #(seq_length, batch, hidden)
             attn_out = attn_weight_repeat.mul(enc_out) #(seq_length, batch, hidden)
