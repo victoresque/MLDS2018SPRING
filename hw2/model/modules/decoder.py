@@ -41,7 +41,11 @@ class Decoder(nn.Module):
             dec_out = self.emb_out(dec_out)
             out_seq.append(dec_out[0])
             dec_out = F.tanh(dec_out)
-            if self.training and np.random.rand() > self.scheduled_sampling:
+            
+            if self.training and np.random.rand() > max(1e-8, 1-(epoch/100)):            # linear decay
+            #if self.training and np.random.rand() > max(1e-8, 0.98**epoch):              # exponential decay
+            #if self.training and np.random.rand() > max(1e-8, 10/(10+np.exp(epoch/10))): # inverse sigmoid decay
+            #if self.training and np.random.rand() > self.scheduled_sampling:             # constant
                 dec_in = targ_seq[i:i+1]
             else:
                 dec_in = self.embedder.dec_out2dec_in(dec_out)
@@ -95,9 +99,9 @@ class DecoderAttn(nn.Module):
         hidden_d, hidden_k = hiddens
 
         for i in range(seq_len):
-            z_batch = self.key_out(z_batch) #(batch, hidden)
-            z_batch = z_batch.view(1, *z_batch.size())
-            z_seq = z_batch.repeat(enc_out.size(0), 1, 1)
+            z_batch_t = self.key_out(z_batch) #(batch, hidden)
+            z_batch_t = z_batch_t.view(1, *z_batch_t.size())
+            z_seq = z_batch_t.repeat(enc_out.size(0), 1, 1)
             attn_weight = F.cosine_similarity(z_seq, enc_out, dim=2) #(seq_length, batch)
             attn_weight = attn_weight.mul(bias_prob)
             #attn_weight = F.softmax(attn_weight, dim=0)
@@ -107,6 +111,7 @@ class DecoderAttn(nn.Module):
             attn_out = attn_out.sum(dim=0) #(batch, hidden)
             attn_out = attn_out.view(1, *attn_out.size()) #(1, batch, hidden)
             
+            z_batch = z_batch.view(1, *z_batch.size())
             keygen_in = torch.cat((attn_out, z_batch), dim=2) #(1, batch, 2*hidden)
             z_batch, hidden_k = self.keyrnn(keygen_in, hidden_k)
             z_batch = z_batch.view(z_batch.size(1), z_batch.size(2))
