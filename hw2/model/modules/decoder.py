@@ -102,7 +102,9 @@ class DecoderAttn(nn.Module):
             z_batch_t = self.key_out(z_batch) #(batch, hidden)
             z_batch_t = z_batch_t.view(1, *z_batch_t.size())
             z_seq = z_batch_t.repeat(enc_out.size(0), 1, 1)
-            attn_weight = F.cosine_similarity(z_seq, enc_out, dim=2) #(seq_length, batch)
+            attn_weight = F.cosine_similarity(z_seq, enc_out, dim=2)  # (seq_length, batch)
+            if z_seq.size(1) == 1:
+                attn_weight = attn_weight.unsqueeze(1)
             # attn_weight = attn_weight.mul(bias_prob)
             attn_weight = F.softmax(attn_weight, dim=0)
             attn_weight = attn_weight.view(*attn_weight.size(),1) #(seq_length, batch, 1)
@@ -110,7 +112,7 @@ class DecoderAttn(nn.Module):
             attn_out = attn_weight_repeat.mul(enc_out) #(seq_length, batch, hidden)
             attn_out = attn_out.sum(dim=0) #(batch, hidden)
             attn_out = attn_out.view(1, *attn_out.size()) #(1, batch, hidden)
-            
+
             z_batch = z_batch.view(1, *z_batch.size())
             keygen_in = torch.cat((attn_out, z_batch), dim=2) #(1, batch, 2*hidden)
             z_batch, hidden_k = self.keyrnn(keygen_in, hidden_k)

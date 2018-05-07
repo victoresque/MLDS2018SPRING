@@ -72,7 +72,7 @@ def postprocess(raw):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='HW2 Testing')
+    parser = argparse.ArgumentParser(description='HW2-1 Testing')
     parser.add_argument('--name', required=True, type=str,
                         help='Specify the name of folder')
     parser.add_argument('--checkpoint', required=True, type=str,

@@ -1,30 +1,30 @@
 {
-    "name": "chatbot00001",
+    "name": "chatbot_schesamp_none",
     "task": "chatbot",
     "cuda": true,
     "embedder": {
         "type": "ChineseOneHotEmbedder"
     },
     "data_loader": {
-        "batch_size": 64,
-        "train_seq_count": 40000,
+        "batch_size": 128,
+        "train_seq_count": 50000,
         "shuffle": true
     },
     "validation": {
         "validation_split": 0.1,
         "shuffle": true
     },
-    "optimizer_type": "Adam",
+    "optimizer_type": "RMSprop",
     "optimizer": {
         "lr": 0.001,
         "weight_decay": 0
     },
     "loss": "cross_entropy",
-    "metrics": ["perplexity", "correlation"],
+    "metrics": [],
     "trainer": {
         "epochs": 1000,
         "save_dir": "saved/",
-        "save_freq": 2,
+        "save_freq": 5,
         "verbosity": 2,
         "monitor": "val_loss",
         "monitor_mode": "min"
@@ -32,17 +32,17 @@
     "arch": "Seq2Seq",
     "model": {
         "rnn_type": "LSTM",
-        "input_size": 1024,
+        "input_size": 2048,
         "hidden_size": 256,
         "encoder": {
             "layers": 2,
-            "dropout": 0.2,
+            "dropout": 0.4,
             "bidirectional": false
         },
         "decoder": {
             "layers": 2,
-            "dropout": 0.2,
-            "attnkey_dropout": 0.2
+            "dropout": 0.4,
+            "attnkey_dropout": 0.4
         },
         "attention": true,
         "scheduled_sampling": 0.2

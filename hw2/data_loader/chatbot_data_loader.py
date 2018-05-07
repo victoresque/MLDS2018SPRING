@@ -8,7 +8,7 @@ from utils.util import ensure_dir
 
 
 class ChatbotDataLoader(BaseDataLoader):
-    def __init__(self, config, embedder, mode, path, embedder_path, vocab_path):
+    def __init__(self, config, embedder, mode, path, embedder_path, vocab_path=None):
         assert mode == 'train' or mode == 'test'
         if mode == 'train':
             shuffle = config['data_loader']['shuffle']
@@ -44,7 +44,10 @@ class ChatbotDataLoader(BaseDataLoader):
             ensure_dir(os.path.dirname(embedder_path))
             pickle.dump(self.embedder, open(embedder_path, 'wb'))
         else:
-            pass
+            self.corpus = self.__load_corpus(path)
+            self.embedder = pickle.load(open(embedder_path, 'rb'))
+            for i in range(len(self.corpus)):
+                self.in_seq.append(self.corpus[i])
 
     def __next__(self):
         """
@@ -66,26 +69,32 @@ class ChatbotDataLoader(BaseDataLoader):
                 input, (output, ...)
         """
         batch = super(ChatbotDataLoader, self).__next__()
-        in_seq_batch, out_seq_batch = batch
-
-        in_seq_batch = self.embedder.encode_lines(in_seq_batch)
-        out_seq_batch = self.embedder.encode_lines(out_seq_batch)
-
-        in_seq_batch = self.__pad_in(in_seq_batch, self.embedder.encode_word('<PAD>'))
-        out_seq_batch, out_seq_weight = self.__pad_out(out_seq_batch,
-                                                       self.embedder.encode_word('<PAD>'),
-                                                       self.embedder.encode_word('<EOS>'))
-
-        in_seq_batch = np.array(in_seq_batch).transpose((1, 0, 2))
-        out_seq_batch = np.array(out_seq_batch).transpose((1, 0, 2))
-        out_seq_weight = np.array(out_seq_weight).transpose((1, 0))
         if self.mode == 'train':
+            in_seq_batch, out_seq_batch = batch
+
+            in_seq_batch = self.embedder.encode_lines(in_seq_batch)
+            out_seq_batch = self.embedder.encode_lines(out_seq_batch)
+
+            in_seq_batch = self.__pad_in(in_seq_batch, self.embedder.encode_word('<PAD>'))
+            out_seq_batch, out_seq_weight = self.__pad_out(out_seq_batch,
+                                                           self.embedder.encode_word('<PAD>'),
+                                                           self.embedder.encode_word('<EOS>'))
+
+            in_seq_batch = np.array(in_seq_batch).transpose((1, 0, 2))
+            out_seq_batch = np.array(out_seq_batch).transpose((1, 0, 2))
+            out_seq_weight = np.array(out_seq_weight).transpose((1, 0))
             return in_seq_batch, (out_seq_batch, out_seq_weight)
         else:
+            in_seq_batch = batch[0]
+            in_seq_batch = self.embedder.encode_lines(in_seq_batch)
+            in_seq_batch = np.array(in_seq_batch).transpose((1, 0, 2))
             return in_seq_batch
 
     def _pack_data(self):
-        packed = list(zip(self.in_seq, self.out_seq))
+        if self.mode == 'train':
+            packed = list(zip(self.in_seq, self.out_seq))
+        else:
+            packed = list(zip(self.in_seq))
         return packed
 
     def _unpack_data(self, packed):
@@ -94,7 +103,10 @@ class ChatbotDataLoader(BaseDataLoader):
         return unpacked
 
     def _update_data(self, unpacked):
-        self.in_seq, self.out_seq = unpacked
+        if self.mode == 'train':
+            self.in_seq, self.out_seq = unpacked
+        else:
+            self.in_seq = unpacked
 
     def _n_samples(self):
         return len(self.in_seq)
