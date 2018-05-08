@@ -29,7 +29,9 @@ def main(args):
     model.summary()
 
     result = []
-    for batch_idx, in_seq in enumerate(data_loader):
+    from tqdm import tqdm
+    for batch_idx, in_seq in enumerate(tqdm(data_loader)):
+    # for batch_idx, in_seq in enumerate(data_loader):
         in_seq = torch.FloatTensor(in_seq)
         in_seq = Variable(in_seq)
         if not args.no_cuda:
@@ -43,8 +45,7 @@ def main(args):
             out_seq = beam_search(model, data_loader.embedder, in_seq, seq_len=24, beam_size=args.beam_size)
             out_seq = data_loader.embedder.decode_lines(out_seq)
 
-        out_seq = postprocess(out_seq)
-        print(out_seq)
+        out_seq = [postprocess(line) for line in out_seq]
         result.extend(out_seq)
 
     with open(args.output, 'w') as f:
@@ -53,7 +54,7 @@ def main(args):
 
 
 def postprocess(raw):
-    line = re.sub(r'<UNK>', '', raw[0])
+    line = re.sub(r'<UNK>', '', raw)
     line = re.sub(r'\.{4,}', '...', line)
     line = re.sub(r'了+', '了', line)
     line = re.sub(r'[a-zA-Z0-9]', '', line)
@@ -61,7 +62,7 @@ def postprocess(raw):
     line = re.sub(r'((.)\2+)', r'\g<2>', line)
     if len(line) == 0:
         line = '你好'
-    return [line]
+    return line
 
 
 if __name__ == '__main__':

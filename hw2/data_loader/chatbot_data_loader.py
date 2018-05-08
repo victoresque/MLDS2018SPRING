@@ -15,7 +15,7 @@ class ChatbotDataLoader(BaseDataLoader):
             batch_size = config['data_loader']['batch_size']
         else:
             shuffle = False
-            batch_size = 1
+            batch_size = 100
         super(ChatbotDataLoader, self).__init__(config, shuffle, batch_size)
         self.mode = mode
         self.in_seq = []
@@ -87,6 +87,7 @@ class ChatbotDataLoader(BaseDataLoader):
         else:
             in_seq_batch = batch[0]
             in_seq_batch = self.embedder.encode_lines(in_seq_batch)
+            in_seq_batch = self.__pad_in(in_seq_batch, self.embedder.encode_word('<PAD>'))
             in_seq_batch = np.array(in_seq_batch).transpose((1, 0, 2))
             return in_seq_batch
 
