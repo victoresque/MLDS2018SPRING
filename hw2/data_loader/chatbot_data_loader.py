@@ -15,7 +15,7 @@ class ChatbotDataLoader(BaseDataLoader):
             batch_size = config['data_loader']['batch_size']
         else:
             shuffle = False
-            batch_size = 100
+            batch_size = 128
         super(ChatbotDataLoader, self).__init__(config, shuffle, batch_size)
         self.mode = mode
         self.in_seq = []
@@ -68,8 +68,9 @@ class ChatbotDataLoader(BaseDataLoader):
             should only return two items, output-related items packed into a tuple:
                 input, (output, ...)
         """
-        batch = super(ChatbotDataLoader, self).__next__()
+
         if self.mode == 'train':
+            batch = super(ChatbotDataLoader, self).__next__()
             in_seq_batch, out_seq_batch = batch
 
             in_seq_batch = self.embedder.encode_lines(in_seq_batch)
@@ -85,6 +86,13 @@ class ChatbotDataLoader(BaseDataLoader):
             out_seq_weight = np.array(out_seq_weight).transpose((1, 0))
             return in_seq_batch, (out_seq_batch, out_seq_weight)
         else:
+            packed = self._pack_data()
+            if self.batch_idx * self.batch_size < len(self.in_seq):
+                batch = packed[self.batch_idx * self.batch_size:(self.batch_idx + 1) * self.batch_size]
+                batch = self._unpack_data(batch)
+                self.batch_idx = self.batch_idx + 1
+            else:
+                raise StopIteration
             in_seq_batch = batch[0]
             in_seq_batch = self.embedder.encode_lines(in_seq_batch)
             in_seq_batch = self.__pad_in(in_seq_batch, self.embedder.encode_word('<PAD>'))
