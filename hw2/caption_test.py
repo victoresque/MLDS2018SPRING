@@ -46,13 +46,10 @@ def main(args):
         out_seq = [(str(id[0]), out_seq)]
         result.extend(out_seq)
 
-    output_path = os.path.join("datasets/MLDS_hw2_1_data/predict/", args.output)
-    with open(output_path, 'w') as f:
+    with open(args.output, 'w') as f:
         for video_id, caption in result:
             caption = postprocess(caption)
             f.write(video_id+','+caption+'\n')
-    os.chdir("datasets/MLDS_hw2_1_data/")
-    subprocess.call(["python3", "bleu_eval.py", "predict/"+args.output])
 
 
 def postprocess(raw):

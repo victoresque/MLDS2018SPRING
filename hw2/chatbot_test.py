@@ -29,8 +29,7 @@ def main(args):
     model.summary()
 
     result = []
-    from tqdm import tqdm
-    for batch_idx, in_seq in enumerate(tqdm(data_loader)):
+    for batch_idx, in_seq in enumerate(data_loader):
     # for batch_idx, in_seq in enumerate(data_loader):
         in_seq = torch.FloatTensor(in_seq)
         in_seq = Variable(in_seq)
