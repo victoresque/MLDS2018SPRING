@@ -29,7 +29,7 @@ def main(args):
     model.summary()
 
     result = []
-    for batch_idx, (in_seq, fmt) in enumerate(data_loader):
+    for batch_idx, (in_seq, id) in enumerate(data_loader):
         in_seq = torch.FloatTensor(in_seq)
         in_seq = Variable(in_seq)
         if not args.no_cuda:
@@ -43,7 +43,7 @@ def main(args):
             out_seq = beam_search(model, data_loader.embedder, in_seq, seq_len=24, beam_size=args.beam_size)
             out_seq = data_loader.embedder.decode_lines(out_seq)
 
-        out_seq = [(fmt[0]['id'], out_seq)]
+        out_seq = [(str(id[0]), out_seq)]
         result.extend(out_seq)
 
     output_path = os.path.join("datasets/MLDS_hw2_1_data/predict/", args.output)

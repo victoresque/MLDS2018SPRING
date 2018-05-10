@@ -44,14 +44,14 @@ class CaptionDataLoader(BaseDataLoader):
                 
         else:
             features = self.__load_features(os.path.join(path, 'feat'))
-            labels = self.__load_labels(os.path.join(path, '../testing_label.json'))
             self.embedder = pickle.load(open(embedder_path, 'rb'))
 
         for video_id, feature in features.items():
             self.video_ids.append(video_id)
             self.in_seq.append(feature)
-            self.out_seq.append(labels[video_id])
-            self.formatted.append({'caption': labels[video_id], 'id': video_id})
+            if self.mode == 'train':
+                self.out_seq.append(labels[video_id])
+                self.formatted.append({'caption': labels[video_id], 'id': video_id})
 
     def __next__(self):
         """
@@ -76,45 +76,52 @@ class CaptionDataLoader(BaseDataLoader):
             should only return two items, output-related items packed into a tuple:
                 input, (output, ...)
         """
-        batch = super(CaptionDataLoader, self).__next__()
-        in_seq_batch, out_seqs_batch, formatted_batch = batch
-
-        sample_count = np.random.randint(self.sample_range[0], self.sample_range[1]+1)
-        for i, seq in enumerate(in_seq_batch):
-            rand_idx = sorted(np.random.permutation(80)[:sample_count])
-            in_seq_batch[i] = [seq[idx] for idx in rand_idx]
-
-        # pick random sequence as target
-        out_seq_batch, out_seq_idx = [], []
-        for seq in out_seqs_batch:
-            random_idx = np.random.randint(len(seq))
-            out_seq_batch.append(seq[random_idx])
-            out_seq_idx.append(len(in_seq_batch[0])*random_idx/len(seq))
-        """
-            out_seq_idx:
-                type:   list
-                shape:  batch size
-                note:   randomly chosen index of caption of the according video
-        """
-        # pick first sequence as target
-        # out_seq_batch = [seq[0] for seq in out_seq_batch]
-
-        out_seq_batch, out_seq_weight = self.__pad_batch(out_seq_batch,
-                                                         self.embedder.encode_word('<PAD>'),
-                                                         self.embedder.encode_word('<EOS>'))
-        
-        in_seq_batch = np.array(in_seq_batch).transpose((1, 0, 2))
-        out_seq_batch = np.array(out_seq_batch).transpose((1, 0, 2))
-        out_seq_weight = np.array(out_seq_weight).transpose((1, 0))
-        out_seq_idx = np.array(out_seq_idx)
-            
         if self.mode == 'train':
+            batch = super(CaptionDataLoader, self).__next__()
+            in_seq_batch, out_seqs_batch, formatted_batch = batch
+
+            sample_count = np.random.randint(self.sample_range[0], self.sample_range[1]+1)
+            for i, seq in enumerate(in_seq_batch):
+                rand_idx = sorted(np.random.permutation(80)[:sample_count])
+                in_seq_batch[i] = [seq[idx] for idx in rand_idx]
+
+            # pick random sequence as target
+            out_seq_batch, out_seq_idx = [], []
+            for seq in out_seqs_batch:
+                random_idx = np.random.randint(len(seq))
+                out_seq_batch.append(seq[random_idx])
+                out_seq_idx.append(len(in_seq_batch[0])*random_idx/len(seq))
+            """
+                out_seq_idx:
+                    type:   list
+                    shape:  batch size
+                    note:   randomly chosen index of caption of the according video
+            """
+            # pick first sequence as target
+            # out_seq_batch = [seq[0] for seq in out_seq_batch]
+
+            out_seq_batch, out_seq_weight = self.__pad_batch(out_seq_batch,
+                                                             self.embedder.encode_word('<PAD>'),
+                                                             self.embedder.encode_word('<EOS>'))
+
+            in_seq_batch = np.array(in_seq_batch).transpose((1, 0, 2))
+            out_seq_batch = np.array(out_seq_batch).transpose((1, 0, 2))
+            out_seq_weight = np.array(out_seq_weight).transpose((1, 0))
+            out_seq_idx = np.array(out_seq_idx)
+
             return in_seq_batch, (out_seq_batch, out_seq_idx, out_seq_weight, formatted_batch)
         else:
-            return in_seq_batch, formatted_batch
+            batch = super(CaptionDataLoader, self).__next__()
+            in_seq_batch, video_id_batch = batch
+            in_seq_batch = np.array(in_seq_batch).transpose((1, 0, 2))
+            video_id_batch = np.array(video_id_batch)
+            return in_seq_batch, video_id_batch
 
     def _pack_data(self):
-        packed = list(zip(self.in_seq, self.out_seq, self.formatted))
+        if self.mode == 'train':
+            packed = list(zip(self.in_seq, self.out_seq, self.formatted))
+        else:
+            packed = list(zip(self.in_seq, self.video_ids))
         return packed
 
     def _unpack_data(self, packed):
@@ -123,7 +130,10 @@ class CaptionDataLoader(BaseDataLoader):
         return unpacked
 
     def _update_data(self, unpacked):
-        self.in_seq, self.out_seq, self.formatted = unpacked
+        if self.mode == 'train':
+            self.in_seq, self.out_seq, self.formatted = unpacked
+        else:
+            self.in_seq, self.video_ids = unpacked
 
     def _n_samples(self):
         return len(self.in_seq)
