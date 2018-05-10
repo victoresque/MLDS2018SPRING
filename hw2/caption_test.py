@@ -57,19 +57,56 @@ def main(args):
 
 def postprocess(raw):
     lines = []
-    for seq in raw:
-        seq = seq.split()
-        prev_word = None
-        seq = [w for w in seq if w != '<UNK>']
-        line = []
-        for word in seq:
-            if word != prev_word:
-                line.append(word)
-                prev_word = word
+    for line in raw:
+        line = line.split()
+        line = [w.replace("<UNK>", "something") for w in line]
+        for _ in range(3):
+            line = remove_repeat(line)
+            line = remove_duplicate(line)
+            line = remove_dummyword(line)
         line = ' '.join(line)
         lines.append(line)
     return ','.join(lines)
 
+
+def remove_duplicate(line):
+    length = 2
+    while length < len(line):
+        stack = []
+        skip_flag = False
+        for i in range(len(line)+1-length):
+            if skip_flag:
+                skip_flag = False
+                continue
+            if (line[i], line[i+1]) not in stack:
+                stack.append((line[i], line[i+1]))
+            else:
+                line[i], line[i+1] = None, None
+                skip_flag = True
+        line = [word for word in line if word is not None]
+        length += 1
+    return line
+
+def remove_dummyword(line):
+    stop_words = ['a','an','and','is','at','in','into','is','of','on','to','the','then', 'from', 'with']
+    while line and line[-1] in stop_words:
+        line.pop()
+    return_line = []
+    for i, word in enumerate(line):
+        if word == 'something':
+            if line[max(0,i-1)] == 'a' or line[max(0,i-1)] == 'an':
+                return_line.pop()
+        return_line.append(word)
+    return return_line
+
+def remove_repeat(seq):
+    line = []
+    prev_word = None
+    for word in seq:
+        if word != prev_word:
+            line.append(word)
+            prev_word = word
+    return line
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='HW2-1 Testing')
