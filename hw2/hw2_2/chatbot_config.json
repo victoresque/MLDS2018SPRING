@@ -1,13 +1,13 @@
 {
-    "name": "chatbot_schesamp_none",
+    "name": "chatbot_overfit",
     "task": "chatbot",
     "cuda": true,
     "embedder": {
         "type": "ChineseOneHotEmbedder"
     },
     "data_loader": {
-        "batch_size": 128,
-        "train_seq_count": 50000,
+        "batch_size": 64,
+        "train_seq_count": 8000,
         "shuffle": true
     },
     "validation": {
@@ -36,13 +36,13 @@
         "hidden_size": 256,
         "encoder": {
             "layers": 2,
-            "dropout": 0.4,
+            "dropout": 0.1,
             "bidirectional": false
         },
         "decoder": {
             "layers": 2,
-            "dropout": 0.4,
-            "attnkey_dropout": 0.4
+            "dropout": 0.1,
+            "attnkey_dropout": 0.1
         },
         "attention": true,
         "scheduled_sampling": 0.2

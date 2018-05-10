@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from scipy.stats import poisson
+# from scipy.stats import poisson
 
 
 class Decoder(nn.Module):
