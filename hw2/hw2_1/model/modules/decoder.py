@@ -103,8 +103,6 @@ class DecoderAttn(nn.Module):
             z_batch_t = z_batch_t.view(1, *z_batch_t.size())
             z_seq = z_batch_t.repeat(enc_out.size(0), 1, 1)
             attn_weight = F.cosine_similarity(z_seq, enc_out, dim=2)  # (seq_length, batch)
-            if len(attn_weight.size()) < 3:
-                attn_weight = attn_weight.unsqueeze(1)
             # attn_weight = attn_weight.mul(bias_prob)
             attn_weight = F.softmax(attn_weight, dim=0)
             attn_weight = attn_weight.view(*attn_weight.size(),1) #(seq_length, batch, 1)
