@@ -24,7 +24,7 @@ class BaseDataLoader:
 
     def __next__(self):
         """
-        :return: Next batch
+        :return: Next batch -> [[datas in batch], [targets in batch]]
         """
         packed = self._pack_data()
         if self.batch_idx < self.__len__():
@@ -76,6 +76,7 @@ class BaseDataLoader:
         Shuffle data members in the data loader
         """
         packed = self._pack_data()
+        np.random.seed(0)
         rand_idx = np.random.permutation(len(packed))
         packed = [packed[i] for i in rand_idx]
         self._update_data(self._unpack_data(packed))
