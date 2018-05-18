@@ -21,11 +21,15 @@ class MnistDataLoader(BaseDataLoader):
         for img_file in sorted(os.listdir(self.data_dir1), key=lambda x: int(x[:x.rfind('.')])):
             img_path = os.path.join(self.data_dir1, img_file)
             img = cv2.imread(img_path)
+            if img.shpae != (64,64,3):
+                img = cv2.resize(img, (64,64))
             self.images.append(img)
         # add images in data_dir2
         for img_file in sorted(os.listdir(self.data_dir2), key=lambda x: int(x[:x.rfind('.')])):
             img_path = os.path.join(self.data_dir2, img_file)
             img = cv2.imread(img_path)
+            if img.shpae != (64,64,3):
+                img = cv2.resize(img, (64,64))
             self.images.append(img)
         # generate noise
         n_img = len(self.images)
