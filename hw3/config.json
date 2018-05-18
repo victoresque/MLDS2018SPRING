@@ -6,9 +6,7 @@
         "data_dir2": "datasets/extra_data/images/",
         "batch_size": 32,
         "shuffle": true,
-        "noise_seed": 0,
         "noise_dim": 8
-
     },
     "validation": {
         "validation_split": 0.1,
