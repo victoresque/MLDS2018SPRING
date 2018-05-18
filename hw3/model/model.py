@@ -40,7 +40,6 @@ class GANGenerator(BaseModel):
 class GANDiscriminator(BaseModel):
     def __init__(self):
         super(GANDiscriminator, self).__init__()
-        
         self.conv = nn.Sequential(
             nn.Conv2d(3, 128, kernel_size=4, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(128),
