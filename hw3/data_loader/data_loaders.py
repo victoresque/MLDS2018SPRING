@@ -32,9 +32,10 @@ class GanDataLoader(BaseDataLoader):
         self.images = np.array(self.images)
 
     def __iter__(self):
-        super(GanDataLoader, self).__iter__()
         n_img = len(self.images)
-        self.noise = np.random.normal(0, 1, (n_img, self.noise_dim))
+        self.noise = [np.random.normal(0, 1, (self.noise_dim,)) for i in range(n_img)]
+        super(GanDataLoader, self).__iter__()
+        return self
 
     def __next__(self):
         """
@@ -43,12 +44,15 @@ class GanDataLoader(BaseDataLoader):
         """
         batch = super(GanDataLoader, self).__next__()
         batch = [np.array(sample) for sample in batch]  # [[noise in batch], [img in batch]]
-        label = np.concatenate(np.zeros(len(batch[0])), np.ones(len(batch[0])))
+        label = np.concatenate((np.zeros(len(batch[0])), np.ones(len(batch[0]))))
         batch.append(label)
         return batch
 
     def _pack_data(self):
-        packed = list(zip(self.noise, self.images))
+        if self.noise is not None:
+            packed = list(zip(self.noise, self.images))
+        else:
+            packed = list(self.images)
         return packed
 
     def _unpack_data(self, packed):
@@ -60,4 +64,13 @@ class GanDataLoader(BaseDataLoader):
         self.x, self.y = unpacked
 
     def _n_samples(self):
-        return len(self.x)
+        return len(self.images)
+
+
+if __name__ == '__main__':
+    import json
+    test = GanDataLoader(json.load(open('config.json')))
+    i = iter(test)
+    print(test.images.shape)
+    a,b,c = next(i)
+    print(a.shape, b.shape, c.shape)
