@@ -4,7 +4,7 @@
     "data_loader": {
         "data_dir1": "datasets/AnimeDataset/faces/",
         "data_dir2": "datasets/extra_data/images/",
-        "batch_size": 16,
+        "batch_size": 32,
         "shuffle": true,
         "noise_dim": 8
     },

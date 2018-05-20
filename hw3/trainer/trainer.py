@@ -150,8 +150,9 @@ class Trainer(BaseTrainer):
         }
 
     def __print_status(self, epoch, batch_idx, n_trained, n_data, loss):
-        if batch_idx == 0 or batch_idx == n_data-1: print("")
-        log_msg = '\rTrain Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
+        if batch_idx == 0: print("")
+        log_msg = '\rTrain Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.15f}'.format(
             epoch, n_trained, n_data, 100.0 * n_trained / n_data, loss)
         sys.stdout.write(log_msg)
         sys.stdout.flush()
+        if batch_idx == n_data-1: print("")
