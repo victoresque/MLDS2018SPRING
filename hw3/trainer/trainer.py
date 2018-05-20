@@ -1,5 +1,7 @@
 import numpy as np
 import torch, sys
+import torchvision
+from tensorboardX import SummaryWriter
 from torch.autograd import Variable
 from base import BaseTrainer
 
@@ -68,7 +70,7 @@ class Trainer(BaseTrainer):
             noise = np.reshape(noise, (*noise.shape, 1, 1))
             real_images = np.transpose(real_images, (0, 3, 1, 2))
             noise, real_images, labels = self._to_variable(noise, real_images, labels)
-            
+
             # training on discrimator
             self.dis_optimizer.zero_grad()
             gen_images = self.model['gen'](noise)
@@ -82,10 +84,10 @@ class Trainer(BaseTrainer):
             loss_d = self.loss(output, target)
             loss_d.backward()
             self.dis_optimizer.step()
-            
+
             total_loss += loss_d.data[0]
             total_metrics += self._eval_metrics(output, target)
-                
+
             # training on generator
             loss_g = Variable(torch.zeros(1))
             if batch_idx % 10 > 10/(self.training_ratio+1):
@@ -94,11 +96,11 @@ class Trainer(BaseTrainer):
                 noise = Variable(noise).cuda() if self.with_cuda else Variable(noise)
                 gen_images = self.model['gen'](noise)
                 output = self.model['dis'](gen_images)
-                
-                target = labels[self.batch_size:]          
+
+                target = labels[self.batch_size:]
                 loss_g = self.loss(output, target)
                 loss_g.backward()
-                self.gen_optimizer.step()                
+                self.gen_optimizer.step()
 
                 total_loss += loss_g.data[0]
                 total_metrics += self._eval_metrics(output, target)
@@ -108,17 +110,17 @@ class Trainer(BaseTrainer):
                                                  loss_d.data[0]+loss_g.data[0])
 
         log = {
-            'loss': total_loss / len(self.data_loader), 
+            'loss': total_loss / len(self.data_loader),
             'metrics': (total_metrics / len(self.data_loader)).tolist()
         }
 
         if self.valid:
-            val_log = self._valid_epoch()
+            val_log = self._valid_epoch(epoch)
             log = {**log, **val_log}
 
         return log
 
-    def _valid_epoch(self):
+    def _valid_epoch(self, epoch):
         """
         Validate after training an epoch
 
@@ -131,6 +133,7 @@ class Trainer(BaseTrainer):
         self.model['dis'].eval()
         total_val_loss = 0
         total_val_metrics = np.zeros(len(self.metrics))
+        result = torch.FloatTensor()
         for batch_idx, (noise, real_images, labels) in enumerate(self.valid_data_loader):
             noise = np.reshape(noise, (*noise.shape, 1, 1))
             real_images = np.transpose(real_images, (0, 3, 1, 2))
@@ -141,11 +144,20 @@ class Trainer(BaseTrainer):
             output = self.model['dis'](images)
             loss = self.loss(output, labels)
 
+            result = torch.cat((result, gen_images), dim=0)
+
             total_val_loss += loss.data[0]
             total_val_metrics += self._eval_metrics(output, labels)
 
+        # for tensorboard visualization
+        writer = SummaryWriter("GAN")
+        grid = torchvision.utils.make_grid(result)
+
+        writer.add_image('image_result', grid, epoch)
+
+
         return {
-            'val_loss': total_val_loss / len(self.valid_data_loader), 
+            'val_loss': total_val_loss / len(self.valid_data_loader),
             'val_metrics': (total_val_metrics / len(self.valid_data_loader)).tolist()
         }
 
