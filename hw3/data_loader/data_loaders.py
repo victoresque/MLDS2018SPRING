@@ -29,9 +29,10 @@ class GanDataLoader(BaseDataLoader):
             if img.shape != (64, 64, 3):
                 img = cv2.resize(img, (64, 64))
             self.images.append(img)
-        self.images = np.array(self.images)
+        self.images = (np.array(self.images) - 127.5)/127.5
 
     def __iter__(self):
+        self.noise = None
         super(GanDataLoader, self).__iter__()
         n_img = len(self.images)
         self.noise = [np.random.normal(0, 1, (self.noise_dim,)) for i in range(n_img)]

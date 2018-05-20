@@ -22,7 +22,7 @@
     "trainer": {
         "epochs": 1000,
         "save_dir": "saved/",
-        "save_freq": 5,
+        "save_freq": 1,
         "verbosity": 2,
         "monitor": "val_loss",
         "monitor_mode": "min",

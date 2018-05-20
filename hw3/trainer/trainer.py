@@ -127,17 +127,22 @@ class Trainer(BaseTrainer):
         Note:
             The validation metrics in log must have the key 'val_metrics'.
         """
-        self.model.eval()
+        self.model['gen'].eval()
+        self.model['dis'].eval()
         total_val_loss = 0
         total_val_metrics = np.zeros(len(self.metrics))
-        for batch_idx, (data, target) in enumerate(self.valid_data_loader):
-            data, target = self._to_variable(data, target)
+        for batch_idx, (noise, real_images, labels) in enumerate(self.valid_data_loader):
+            noise = np.reshape(noise, (*noise.shape, 1, 1))
+            real_images = np.transpose(real_images, (0, 3, 1, 2))
+            noise, real_images, labels = self._to_variable(noise, real_images, labels)
 
-            output = self.model(data)
-            loss = self.loss(output, target)
+            gen_images = self.model['gen'](noise)
+            images = torch.cat((gen_images, real_images), dim=0)
+            output = self.model['dis'](images)
+            loss = self.loss(output, labels)
 
             total_val_loss += loss.data[0]
-            total_val_metrics += self._eval_metrics(output, target)
+            total_val_metrics += self._eval_metrics(output, labels)
 
         return {
             'val_loss': total_val_loss / len(self.valid_data_loader), 
@@ -145,7 +150,7 @@ class Trainer(BaseTrainer):
         }
 
     def __print_status(self, epoch, batch_idx, n_trained, n_data, loss):
-        if batch_idx == 0: print("")
+        if batch_idx == 0 or batch_idx == n_data-1: print("")
         log_msg = '\rTrain Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
             epoch, n_trained, n_data, 100.0 * n_trained / n_data, loss)
         sys.stdout.write(log_msg)
