@@ -25,6 +25,9 @@ class Trainer(BaseTrainer):
         self.training_ratio = config['trainer']['gen-dis_training_ratio']
         #self.log_step = int(np.sqrt(self.batch_size))
 
+        # tensorboard configuration
+        self.writer = SummaryWriter('../result_tensorboard')
+
     def _to_variable(self, *args):
         return_var = []
         for data in args:
@@ -144,16 +147,14 @@ class Trainer(BaseTrainer):
             output = self.model['dis'](images)
             loss = self.loss(output, labels)
 
-            result = torch.cat((result, gen_images), dim=0)
+            result = torch.cat((result, gen_images.cpu().data), dim=0)
 
             total_val_loss += loss.data[0]
             total_val_metrics += self._eval_metrics(output, labels)
 
         # for tensorboard visualization
-        writer = SummaryWriter("GAN")
         grid = torchvision.utils.make_grid(result)
-
-        writer.add_image('image_result', grid, epoch)
+        self.writer.add_image('image_result', grid, epoch)
 
 
         return {
