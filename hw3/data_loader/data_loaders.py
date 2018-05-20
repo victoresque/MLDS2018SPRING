@@ -12,9 +12,9 @@ class GanDataLoader(BaseDataLoader):
         self.noise_dim = config['data_loader']['noise_dim']
         self.noise = None
         self.images = []
-        self.__parse_images(config['data_loader']['noise_seed'])
+        self.__parse_images()
 
-    def __parse_images(self, seed):
+    def __parse_images(self):
         # add images in data_dir1
         for img_file in sorted(os.listdir(self.data_dir1), key=lambda x: int(x[:x.rfind('.')])):
             img_path = os.path.join(self.data_dir1, img_file)
@@ -32,14 +32,14 @@ class GanDataLoader(BaseDataLoader):
         self.images = np.array(self.images)
 
     def __iter__(self):
+        super(GanDataLoader, self).__iter__()
         n_img = len(self.images)
         self.noise = [np.random.normal(0, 1, (self.noise_dim,)) for i in range(n_img)]
-        super(GanDataLoader, self).__iter__()
         return self
 
     def __next__(self):
         """
-        :return: noise, img, label
+        :return: noise, img, label(zero first, one follow)
             shape = (batch_size, noise_dim), (batch_size, 64,64,3), (2*batch_size,)
         """
         batch = super(GanDataLoader, self).__next__()
@@ -52,7 +52,7 @@ class GanDataLoader(BaseDataLoader):
         if self.noise is not None:
             packed = list(zip(self.noise, self.images))
         else:
-            packed = list(self.images)
+            packed = [(img,) for img in self.images]
         return packed
 
     def _unpack_data(self, packed):
@@ -61,7 +61,7 @@ class GanDataLoader(BaseDataLoader):
         return unpacked
 
     def _update_data(self, unpacked):
-        self.x, self.y = unpacked
+        self.images, = np.array(unpacked)
 
     def _n_samples(self):
         return len(self.images)

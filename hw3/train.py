@@ -6,7 +6,7 @@ import torch
 from model.model import *
 from model.loss import *
 from model.metric import *
-from data_loader import MnistDataLoader
+from data_loader import GanDataLoader
 from trainer import Trainer
 from logger import Logger
 
@@ -16,12 +16,14 @@ logging.basicConfig(level=logging.INFO, format='')
 def main(config, resume):
     train_logger = Logger()
 
-    data_loader = MnistDataLoader(config)
+    data_loader = GanDataLoader(config)
     valid_data_loader = data_loader.split_validation()
 
-    model = eval(config['arch'])(config['model'])
-    model.summary()
-
+    generator = eval(config['arch']['generator'])(config)
+    discriminator = eval(config['arch']['discriminator'])(config)
+    
+    model = {"gen": generator, "dis": discriminator}
+    for _, modules in model.items(): modules.summary()
     loss = eval(config['loss'])
     metrics = [eval(metric) for metric in config['metrics']]
 
@@ -54,7 +56,9 @@ if __name__ == '__main__':
     elif args.config is not None:
         config = json.load(open(args.config))
         path = os.path.join(config['trainer']['save_dir'], config['name'])
-        assert not os.path.exists(path), "Path {} already exists!".format(path)
+        if os.path.exists(path):
+            opt = input("Warning: path {} already exists, continue? [y/N] ".format(path))
+            if opt.upper() != 'Y': exit(1)
     assert config is not None
 
     main(config, args.resume)

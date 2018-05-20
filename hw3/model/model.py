@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class GANGenerator(BaseModel):
     def __init__(self, config):
-        super(GANGenerator, self).__init__()
+        super(GANGenerator, self).__init__(config)
         self.config = config
         self.noise_dim = config['data_loader']['noise_dim']
 
@@ -38,8 +38,8 @@ class GANGenerator(BaseModel):
 
 
 class GANDiscriminator(BaseModel):
-    def __init__(self):
-        super(GANDiscriminator, self).__init__()
+    def __init__(self, config):
+        super(GANDiscriminator, self).__init__(config)
         self.conv = nn.Sequential(
             nn.Conv2d(3, 128, kernel_size=4, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(128),
@@ -65,4 +65,5 @@ class GANDiscriminator(BaseModel):
 
     def forward(self, input_img):
         output = self.conv(input_img)
+        output = output.squeeze()
         return output

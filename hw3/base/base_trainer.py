@@ -26,7 +26,9 @@ class BaseTrainer:
             self.logger.warning('Warning: There\'s no CUDA support on this machine, '
                                 'training is performed on CPU.')
         self.train_logger = train_logger
-        self.optimizer = getattr(optim, config['optimizer_type'])(model.parameters(),
+        self.gen_optimizer = getattr(optim, config['optimizer_type'])(model['gen'].parameters(),
+                                                                  **config['optimizer'])
+        self.dis_optimizer = getattr(optim, config['optimizer_type'])(model['dis'].parameters(),
                                                                   **config['optimizer'])
         self.monitor = config['trainer']['monitor']
         self.monitor_mode = config['trainer']['monitor_mode']
@@ -44,7 +46,7 @@ class BaseTrainer:
         """
         Full training logic
         """
-        for epoch in range(self.start_epoch, self.epochs+1):
+        for epoch in range(self.start_epoch, self.start_epoch+self.epochs):
             result = self._train_epoch(epoch)
             log = {'epoch': epoch}
             for key, value in result.items():
@@ -89,8 +91,10 @@ class BaseTrainer:
             'arch': arch,
             'epoch': epoch,
             'logger': self.train_logger,
-            'state_dict': self.model.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
+            'gen_state_dict': self.model['gen'].state_dict(),
+            'dis_state_dict': self.model['dis'].state_dict(),
+            'gen_optimizer': self.gen_optimizer.state_dict(),
+            'dis_optimizer': self.dis_optimizer.state_dict(),
             'monitor_best': self.monitor_best,
             'config': self.config
         }
@@ -113,8 +117,10 @@ class BaseTrainer:
         checkpoint = torch.load(resume_path)
         self.start_epoch = checkpoint['epoch'] + 1
         self.monitor_best = checkpoint['monitor_best']
-        self.model.load_state_dict(checkpoint['state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer'])
+        self.model['gen'].load_state_dict(checkpoint['gen_state_dict'])
+        self.model['dis'].load_state_dict(checkpoint['dis_state_dict'])
+        self.gen_optimizer.load_state_dict(checkpoint['gen_optimizer'])
+        self.dis_optimizer.load_state_dict(checkpoint['dis_optimizer'])
         self.train_logger = checkpoint['logger']
         self.config = checkpoint['config']
         self.logger.info("Checkpoint '{}' (epoch {}) loaded".format(resume_path, self.start_epoch))

@@ -4,7 +4,7 @@
     "data_loader": {
         "data_dir1": "datasets/AnimeDataset/faces/",
         "data_dir2": "datasets/extra_data/images/",
-        "batch_size": 32,
+        "batch_size": 16,
         "shuffle": true,
         "noise_dim": 8
     },
@@ -17,17 +17,21 @@
         "lr": 0.001,
         "weight_decay": 0
     },
-    "loss": "my_loss",
-    "metrics": ["my_metric", "my_metric2"],
+    "loss": "binary_crossentropy",
+    "metrics": ["accuracy"],
     "trainer": {
         "epochs": 1000,
         "save_dir": "saved/",
-        "save_freq": 1,
+        "save_freq": 5,
         "verbosity": 2,
         "monitor": "val_loss",
-        "monitor_mode": "min"
+        "monitor_mode": "min",
+        "gen-dis_training_ratio": 0.5
     },
-    "arch": "MnistModel", 
+    "arch": {
+        "generator": "GANGenerator",
+        "discriminator": "GANDiscriminator"
+    },
     "model": {
 
     }
