@@ -67,11 +67,11 @@ class Trainer(BaseTrainer):
             self.model['gen'].cuda()
             self.model['dis'].cuda()
 
-        total_loss = 0
+        total_loss, n_traingen = 0, 0
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, (noise, real_images, labels) in enumerate(self.data_loader):
             noise = np.reshape(noise, (*noise.shape, 1, 1))
-            real_images = np.transpose(real_images, (0, 3, 1, 2))
+            real_images = np.transpose(real_images, (0, 3, 1, 2))  # (batch, channel(BGR), width, height)
             noise, real_images, labels = self._to_variable(noise, real_images, labels)
 
             # training on discrimator
@@ -83,10 +83,12 @@ class Trainer(BaseTrainer):
 
             # fake part
             gen_images = self.model['gen'](noise)
+
             fake_output = self.model['dis'](gen_images)
             fake_loss = self.loss(fake_output, labels[:self.batch_size])
 
             loss_d = real_loss + fake_loss
+
             loss_d.backward()
             self.dis_optimizer.step()
 
@@ -95,7 +97,7 @@ class Trainer(BaseTrainer):
 
             # training on generator
             loss_g = Variable(torch.zeros(1))
-            if batch_idx % 10 > 10/(self.training_ratio+1):
+            if batch_idx % 10 < 10*self.training_ratio:
                 self.gen_optimizer.zero_grad()
                 noise = torch.randn(*noise.size())
                 noise = Variable(noise).cuda() if self.with_cuda else Variable(noise)
@@ -114,9 +116,10 @@ class Trainer(BaseTrainer):
                 log_length = self.__print_status(epoch, batch_idx, batch_idx+1, len(self.data_loader),
                                                  loss_d.data[0], loss_g.data[0])
 
+
         log = {
-            'loss': total_loss / len(self.data_loader),
-            'metrics': (total_metrics / len(self.data_loader)).tolist()
+            'loss': total_loss / (len(self.data_loader)),
+            'metrics': (total_metrics / (len(self.data_loader))).tolist()
         }
 
         if self.valid:
@@ -170,3 +173,4 @@ class Trainer(BaseTrainer):
             epoch, n_trained, n_data, 100.0 * n_trained / n_data, loss_d, loss_g)
         sys.stdout.write(log_msg)
         sys.stdout.flush()
+        if batch_idx == n_data-1: print("")
