@@ -75,21 +75,23 @@ class Trainer(BaseTrainer):
             noise, real_images, labels = self._to_variable(noise, real_images, labels)
 
             # training on discrimator
+            # real part
             self.dis_optimizer.zero_grad()
-            gen_images = self.model['gen'](noise)
-            conca_images = torch.cat((gen_images, real_images), dim=0)
-            shuffle_idx = torch.LongTensor(np.random.permutation(2*self.batch_size))
-            if self.with_cuda: shuffle_idx = shuffle_idx.cuda()
-            images = conca_images[shuffle_idx]
-            target = labels[shuffle_idx]
+            real_output = self.model['dis'](real_images)
+            real_loss = self.loss(real_output, labels[self.batch_size:])
+            total_metrics += self._eval_metrics(real_output, labels[self.batch_size:]) * 0.5
 
-            output = self.model['dis'](images)
-            loss_d = self.loss(output, target)
+            # fake part
+            gen_images = self.model['gen'](noise)
+            fake_output = self.model['dis'](gen_images)
+            fake_loss = self.loss(fake_output, labels[:self.batch_size])
+
+            loss_d = real_loss + fake_loss
             loss_d.backward()
             self.dis_optimizer.step()
 
             total_loss += loss_d.data[0]
-            total_metrics += self._eval_metrics(output, target)
+            total_metrics += self._eval_metrics(fake_output, labels[:self.batch_size]) * 0.5
 
             # training on generator
             loss_g = Variable(torch.zeros(1))
@@ -110,7 +112,7 @@ class Trainer(BaseTrainer):
 
             if self.verbosity >= 2:
                 log_length = self.__print_status(epoch, batch_idx, batch_idx+1, len(self.data_loader),
-                                                 loss_d.data[0]+loss_g.data[0])
+                                                 loss_d.data[0], loss_g.data[0])
 
         log = {
             'loss': total_loss / len(self.data_loader),
@@ -162,9 +164,9 @@ class Trainer(BaseTrainer):
             'val_metrics': (total_val_metrics / len(self.valid_data_loader)).tolist()
         }
 
-    def __print_status(self, epoch, batch_idx, n_trained, n_data, loss):
+    def __print_status(self, epoch, batch_idx, n_trained, n_data, loss_d, loss_g):
         if batch_idx == 0: print("")
-        log_msg = '\rTrain Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.15f}'.format(
-            epoch, n_trained, n_data, 100.0 * n_trained / n_data, loss)
+        log_msg = '\rTrain Epoch: {} [{}/{} ({:.0f}%)] Loss: D:{:.6f}, G:{:.6f}'.format(
+            epoch, n_trained, n_data, 100.0 * n_trained / n_data, loss_d, loss_g)
         sys.stdout.write(log_msg)
         sys.stdout.flush()

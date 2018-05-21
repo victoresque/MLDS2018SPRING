@@ -35,7 +35,7 @@ class GanDataLoader(BaseDataLoader):
         self.noise = None
         super(GanDataLoader, self).__iter__()
         n_img = len(self.images)
-        self.noise = [np.random.normal(0, 1, (self.noise_dim,)) for i in range(n_img)]
+        self.noise = [np.random.normal(0, 1, (self.noise_dim,)) for _ in range(n_img)]
         return self
 
     def __next__(self):
