@@ -34,7 +34,7 @@ class Trainer(BaseTrainer):
         self.gen_iter, self.dis_iter = (config['tips']['14']['config']['gen_iter'],
                                         config['tips']['14']['config']['dis_iter']) \
             if config['tips']['14']['enabled'] else (1, 1)
-        self.adaptive_dis_iter = config['tips']['14']['adaptive']
+        self.adaptive_dis_iter = config['tips']['14']['enabled'] and config['tips']['14']['adaptive']
         self.val_acc_threshold = config['tips']['14']['config']['val_acc_threshold']
 
         # tensorboard configuration
@@ -174,10 +174,11 @@ class Trainer(BaseTrainer):
         # for tensorboard visualization
         # grid = torchvision.utils.make_grid(result)
         # self.writer.add_image('image_result', grid, epoch)
-        if self.adaptive_dis_iter and (total_val_metrics / len(self.valid_data_loader))[0] > self.val_acc_threshold:
-            self.dis_iter = self.dis_iter + 1
-        else:
-            self.dis_iter = 1 if self.dis_iter == 1 else self.dis_iter - 1
+        if self.adaptive_dis_iter:
+            if (total_val_metrics / len(self.valid_data_loader))[0] > self.val_acc_threshold:
+                self.dis_iter = self.dis_iter + 1
+            else:
+                self.dis_iter = self.config['tips']['14']['config']['dis_iter']
 
         return {
             'val_loss': total_val_loss / len(self.valid_data_loader),

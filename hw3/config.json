@@ -1,6 +1,6 @@
 {
-    "name": "GAN14",
-    "note": "",
+    "name": "GAN15",
+    "note": "I can't even train a GAN",
     "cuda": true,
     "tips": {
         "01": {
@@ -49,8 +49,8 @@
             "enabled": true,
             "adaptive": true,
             "config": {
-                "val_acc_threshold": 0.8,
-                "dis_iter": 4,
+                "val_acc_threshold": 0.9,
+                "dis_iter": 2,
                 "gen_iter": 1
             }
         },
@@ -74,7 +74,7 @@
         "generator": {
             "type": "Adam",
             "config": {
-                "lr": 0.001,
+                "lr": 0.0005,
                 "weight_decay": 0
             }
         },
