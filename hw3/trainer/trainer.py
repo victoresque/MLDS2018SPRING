@@ -58,15 +58,12 @@ class Trainer(BaseTrainer):
         return acc_metrics
 
     def _train_epoch(self, epoch):
-        self.model.generator.train()
-        self.model.discriminator.train()
+        self.model.train()
         if self.with_cuda:
-            self.model.generator.cuda()
-            self.model.discriminator.cuda()
+            self.model.cuda()
 
         sum_loss_g, n_loss_g = 0, 0
         sum_loss_d, n_loss_d = 0, 0
-
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, (noise, real_images, labels) in enumerate(self.data_loader):
             noise = np.reshape(noise, (*noise.shape, 1, 1))
@@ -85,13 +82,13 @@ class Trainer(BaseTrainer):
             self.dis_optimizer.zero_grad()
             real_output = self.model.discriminator(real_images)
             real_loss = self.loss(real_output, labels[self.batch_size:])
-            total_metrics += self._eval_metrics(real_output, labels[self.batch_size:]) * 0.5
+            total_metrics += self._eval_metrics(real_output, labels[self.batch_size:]) / 2
 
             # fake part
             gen_images = self.model.generator(noise)
 
             # training process visualization
-            imgs = (gen_images.cpu().data[:64] + 1)/2
+            imgs = (gen_images.cpu().data[:64] + 1) / 2
             grid = torchvision.utils.make_grid(imgs).numpy()
             grid = np.transpose(grid, (1, 2, 0))
             cv2.imshow('generated images', grid)
@@ -100,14 +97,13 @@ class Trainer(BaseTrainer):
             fake_output = self.model.discriminator(gen_images)
             fake_loss = self.loss(fake_output, labels[:self.batch_size])
 
-            loss_d = real_loss + fake_loss  # / 2
-
+            loss_d = (real_loss + fake_loss) / 2
             loss_d.backward()
             self.dis_optimizer.step()
 
             sum_loss_d += loss_d.data[0]
             n_loss_d += 1
-            total_metrics += self._eval_metrics(fake_output, labels[:self.batch_size]) * 0.5
+            total_metrics += self._eval_metrics(fake_output, labels[:self.batch_size]) / 2
 
             # training on generator
             if batch_idx % self.dis_iter == 0:
@@ -147,8 +143,7 @@ class Trainer(BaseTrainer):
         return log
 
     def _valid_epoch(self, epoch):
-        self.model.generator.eval()
-        self.model.discriminator.eval()
+        self.model.eval()
         total_val_loss = 0
         total_val_metrics = np.zeros(len(self.metrics))
         result = torch.FloatTensor()
