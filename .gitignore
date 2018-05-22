@@ -3,9 +3,11 @@ __pycache__/
 saved/
 data/
 results/
+datasets/
 ref/
 *ipynb*
 *.pptx
 .DS_Store
 *.pkl
 sftp-config.json
+result_tensorboard/
