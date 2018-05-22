@@ -138,7 +138,7 @@ class Trainer(BaseTrainer):
             'loss': (sum_loss_g + sum_loss_d) / (n_loss_g + n_loss_d),
             'loss_g': sum_loss_g / n_loss_g,
             'loss_d': sum_loss_d / n_loss_d,
-            'metrics': (total_metrics / n_loss_g).tolist(),
+            'metrics': (total_metrics / n_loss_d).tolist(),
             'full_loss': full_loss
         }
 

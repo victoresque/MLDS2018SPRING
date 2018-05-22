@@ -1,5 +1,5 @@
 {
-    "name": "GAN15",
+    "name": "GAN17",
     "note": "I can't even train a GAN",
     "cuda": true,
     "tips": {
@@ -47,10 +47,8 @@
         "14": {
             "desc": "train discriminator more",
             "enabled": true,
-            "adaptive": true,
             "config": {
-                "val_acc_threshold": 0.9,
-                "dis_iter": 2,
+                "dis_iter": 3,
                 "gen_iter": 1
             }
         },
@@ -62,19 +60,19 @@
     "data_loader": {
         "data_dir1": "datasets/AnimeDataset/faces/",
         "data_dir2": "datasets/extra_data/images/",
-        "batch_size": 100,
+        "batch_size": 256,
         "shuffle": true,
         "noise_dim": 16
     },
     "validation": {
-        "validation_split": 0.1,
+        "validation_split": 0,
         "shuffle": true
     },
     "optimizers": {
         "generator": {
             "type": "Adam",
             "config": {
-                "lr": 0.0005,
+                "lr": 0.001,
                 "weight_decay": 0
             }
         },
