@@ -37,7 +37,7 @@
             "desc": "noise to inputs to D with decay",
             "enabled": true,
             "config": {
-                "var": 0.02,
+                "var": 0.05,
                 "decay": "lambda noise, epoch: noise * (0.95 ** epoch)"
             }
         },
@@ -59,7 +59,7 @@
         "data_dir2": "datasets/extra_data/images/",
         "batch_size": 100,
         "shuffle": true,
-        "noise_dim": 16
+        "noise_dim": 64
     },
     "validation": {
         "validation_split": 0.1,
@@ -69,14 +69,14 @@
         "generator": {
             "type": "Adam",
             "config": {
-                "lr": 0.005,
+                "lr": 0.001,
                 "weight_decay": 0
             }
         },
         "discriminator": {
             "type": "Adam",
             "config": {
-                "lr": 0.001,
+                "lr": 0.0001,
                 "weight_decay": 0
             }
         }
