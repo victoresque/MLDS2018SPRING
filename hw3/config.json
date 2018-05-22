@@ -21,8 +21,10 @@
         "05": {
             "desc": "avoid sparse gradients",
             "enabled": true,
-            "type": "PReLU",
+            "type": "LeakyReLU",
             "config": {
+                "negative_slope": 0.2,
+                "inplace": true
             }
         },
         "06": {
@@ -37,7 +39,7 @@
             "desc": "noise to inputs to D with decay",
             "enabled": true,
             "config": {
-                "var": 0.05,
+                "var": 0.01,
                 "decay": "lambda noise, epoch: noise * (0.95 ** epoch)"
             }
         },
@@ -59,7 +61,7 @@
         "data_dir2": "datasets/extra_data/images/",
         "batch_size": 100,
         "shuffle": true,
-        "noise_dim": 64
+        "noise_dim": 16
     },
     "validation": {
         "validation_split": 0.1,
