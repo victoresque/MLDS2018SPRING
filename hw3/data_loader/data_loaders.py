@@ -30,6 +30,7 @@ class GanDataLoader(BaseDataLoader):
                 img = cv2.resize(img, (64, 64))
             self.images.append(img)
         self.images = (np.array(self.images) - 127.5)/127.5
+        self.images = self.images[:1000]
 
     def __iter__(self):
         self.noise = None

@@ -1,9 +1,11 @@
+import sys
 import numpy as np
-import torch, sys
+import torch
 import torchvision
 from tensorboardX import SummaryWriter
 from torch.autograd import Variable
 from base import BaseTrainer
+import cv2
 
 
 class Trainer(BaseTrainer):
@@ -22,8 +24,18 @@ class Trainer(BaseTrainer):
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
         self.valid = True if self.valid_data_loader is not None else False
-        self.training_ratio = config['trainer']['gen-dis_training_ratio']
-        #self.log_step = int(np.sqrt(self.batch_size))
+
+        self.gen_optimizer = self.optimizers['generator']
+        self.dis_optimizer = self.optimizers['discriminator']
+
+        for key, value in config['tips'].items():
+            if key.startswith('13'):
+                self.image_noise_var, self.image_noise_decay = (value['config']['var'],
+                                                                eval(value['config']['decay'])) \
+                    if value['enabled'] else (0, eval('lambda x, epoch: x'))
+            elif key.startswith('14'):
+                self.gen_iter, self.dis_iter = (value['config']['gen_iter'],
+                                                value['config']['dis_iter']) if value['enabled'] else (1, 1)
 
         # tensorboard configuration
         self.writer = SummaryWriter('../result_tensorboard')
@@ -46,79 +58,85 @@ class Trainer(BaseTrainer):
         return acc_metrics
 
     def _train_epoch(self, epoch):
-        """
-        Training logic for an epoch
-
-        :param epoch: Current training epoch.
-        :return: A log that contains all information you want to save.
-
-        Note:
-            If you have additional information to record, for example:
-                > additional_log = {"x": x, "y": y}
-            merge it with log before return. i.e.
-                > log = {**log, **additional_log}
-                > return log
-
-            The metrics in log must have the key 'metrics'.
-        """
-        self.model['gen'].train()
-        self.model['dis'].train()
+        self.model.generator.train()
+        self.model.discriminator.train()
         if self.with_cuda:
-            self.model['gen'].cuda()
-            self.model['dis'].cuda()
+            self.model.generator.cuda()
+            self.model.discriminator.cuda()
 
-        total_loss, n_traingen = 0, 0
+        sum_loss_g, n_loss_g = 0, 0
+        sum_loss_d, n_loss_d = 0, 0
+
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, (noise, real_images, labels) in enumerate(self.data_loader):
             noise = np.reshape(noise, (*noise.shape, 1, 1))
             real_images = np.transpose(real_images, (0, 3, 1, 2))  # (batch, channel(BGR), width, height)
             noise, real_images, labels = self._to_variable(noise, real_images, labels)
 
-            # training on discrimator
+            # add noise to real images (tip 13)
+            image_noise = torch.randn(*real_images.size()) * self.image_noise_var
+            image_noise = self.image_noise_decay(image_noise, epoch)
+            image_noise = Variable(image_noise)
+            image_noise = image_noise.cuda() if self.with_cuda else image_noise
+            real_images = real_images + image_noise
+
+            # training on discriminator
             # real part
             self.dis_optimizer.zero_grad()
-            real_output = self.model['dis'](real_images)
+            real_output = self.model.discriminator(real_images)
             real_loss = self.loss(real_output, labels[self.batch_size:])
             total_metrics += self._eval_metrics(real_output, labels[self.batch_size:]) * 0.5
 
             # fake part
-            gen_images = self.model['gen'](noise)
+            gen_images = self.model.generator(noise)
 
-            fake_output = self.model['dis'](gen_images)
+            # training process visualization
+            imgs = (gen_images.cpu().data[:64] + 1)/2
+            grid = torchvision.utils.make_grid(imgs).numpy()
+            grid = np.transpose(grid, (1, 2, 0))
+            cv2.imshow('generated images', grid)
+            cv2.waitKey(1)
+
+            fake_output = self.model.discriminator(gen_images)
             fake_loss = self.loss(fake_output, labels[:self.batch_size])
 
-            loss_d = real_loss + fake_loss
+            loss_d = real_loss + fake_loss  # / 2
 
             loss_d.backward()
             self.dis_optimizer.step()
 
-            total_loss += loss_d.data[0]
+            sum_loss_d += loss_d.data[0]
+            n_loss_d += 1
             total_metrics += self._eval_metrics(fake_output, labels[:self.batch_size]) * 0.5
 
             # training on generator
-            loss_g = Variable(torch.zeros(1))
-            if batch_idx % 10 < 10*self.training_ratio:
-                self.gen_optimizer.zero_grad()
-                noise = torch.randn(*noise.size())
-                noise = Variable(noise).cuda() if self.with_cuda else Variable(noise)
-                gen_images = self.model['gen'](noise)
-                output = self.model['dis'](gen_images)
+            if batch_idx % self.dis_iter == 0:
+                for i in range(self.gen_iter):
+                    self.gen_optimizer.zero_grad()
+                    noise = torch.randn(*noise.size())
+                    noise = Variable(noise).cuda() if self.with_cuda else Variable(noise)
+                    gen_images = self.model.generator(noise)
+                    output = self.model.discriminator(gen_images)
 
-                target = labels[self.batch_size:]
-                loss_g = self.loss(output, target)
-                loss_g.backward()
-                self.gen_optimizer.step()
+                    target = labels[self.batch_size:]
+                    loss_g = self.loss(output, target)
+                    loss_g.backward()
+                    self.gen_optimizer.step()
 
-                total_loss += loss_g.data[0]
-                total_metrics += self._eval_metrics(output, target)
+                    sum_loss_g += loss_g.data[0]
+                    n_loss_g += 1
+                    total_metrics += self._eval_metrics(output, target)
+
+                    # self.writer.add_image('image_result', grid, epoch)
 
             if self.verbosity >= 2:
-                log_length = self.__print_status(epoch, batch_idx, batch_idx+1, len(self.data_loader),
-                                                 loss_d.data[0], loss_g.data[0])
-
+                self.__print_status(epoch, batch_idx, batch_idx+1, len(self.data_loader),
+                                    loss_d.data[0], loss_g.data[0])
 
         log = {
-            'loss': total_loss / (len(self.data_loader)),
+            'loss': (sum_loss_g + sum_loss_d) / (n_loss_g + n_loss_d),
+            'loss_g': sum_loss_g / n_loss_g,
+            'loss_d': sum_loss_d / n_loss_d,
             'metrics': (total_metrics / (len(self.data_loader))).tolist()
         }
 
@@ -129,16 +147,8 @@ class Trainer(BaseTrainer):
         return log
 
     def _valid_epoch(self, epoch):
-        """
-        Validate after training an epoch
-
-        :return: A log that contains information about validation
-
-        Note:
-            The validation metrics in log must have the key 'val_metrics'.
-        """
-        self.model['gen'].eval()
-        self.model['dis'].eval()
+        self.model.generator.eval()
+        self.model.discriminator.eval()
         total_val_loss = 0
         total_val_metrics = np.zeros(len(self.metrics))
         result = torch.FloatTensor()
@@ -147,9 +157,9 @@ class Trainer(BaseTrainer):
             real_images = np.transpose(real_images, (0, 3, 1, 2))
             noise, real_images, labels = self._to_variable(noise, real_images, labels)
 
-            gen_images = self.model['gen'](noise)
+            gen_images = self.model.generator(noise)
             images = torch.cat((gen_images, real_images), dim=0)
-            output = self.model['dis'](images)
+            output = self.model.discriminator(images)
             loss = self.loss(output, labels)
 
             result = torch.cat((result, gen_images.cpu().data), dim=0)
@@ -158,9 +168,8 @@ class Trainer(BaseTrainer):
             total_val_metrics += self._eval_metrics(output, labels)
 
         # for tensorboard visualization
-        grid = torchvision.utils.make_grid(result)
-        self.writer.add_image('image_result', grid, epoch)
-
+        # grid = torchvision.utils.make_grid(result)
+        # self.writer.add_image('image_result', grid, epoch)
 
         return {
             'val_loss': total_val_loss / len(self.valid_data_loader),
@@ -168,9 +177,11 @@ class Trainer(BaseTrainer):
         }
 
     def __print_status(self, epoch, batch_idx, n_trained, n_data, loss_d, loss_g):
-        if batch_idx == 0: print("")
+        if batch_idx == 0:
+            print('')
         log_msg = '\rTrain Epoch: {} [{}/{} ({:.0f}%)] Loss: D:{:.6f}, G:{:.6f}'.format(
             epoch, n_trained, n_data, 100.0 * n_trained / n_data, loss_d, loss_g)
         sys.stdout.write(log_msg)
         sys.stdout.flush()
-        if batch_idx == n_data-1: print("")
+        if batch_idx == n_data-1:
+            print('')

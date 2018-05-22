@@ -26,14 +26,18 @@ class BaseTrainer:
             self.logger.warning('Warning: There\'s no CUDA support on this machine, '
                                 'training is performed on CPU.')
         self.train_logger = train_logger
-        self.gen_optimizer = getattr(optim, config['optimizer_type'])(model['gen'].parameters(),
-                                                                  **config['optimizer'])
-        self.dis_optimizer = getattr(optim, config['optimizer_type'])(model['dis'].parameters(),
-                                                                  **config['optimizer'])
-        self.monitor = config['trainer']['monitor']
-        self.monitor_mode = config['trainer']['monitor_mode']
-        assert self.monitor_mode == 'min' or self.monitor_mode == 'max'
-        self.monitor_best = math.inf if self.monitor_mode == 'min' else -math.inf
+        self.optimizers = {}
+        for optim_name, optim_config in config['optimizers'].items():
+            self.optimizers[optim_name] = getattr(optim, optim_config['type'])(
+                eval('model.'+optim_name).parameters(), **optim_config['config'])
+
+        self.save_best = config['trainer']['save_best']
+        if self.save_best:
+            self.monitor = config['trainer']['monitor']
+            self.monitor_mode = config['trainer']['monitor_mode']
+            assert self.monitor_mode == 'min' or self.monitor_mode == 'max'
+            self.monitor_best = math.inf if self.monitor_mode == 'min' else -math.inf
+
         self.start_epoch = 1
         self.checkpoint_dir = os.path.join(config['trainer']['save_dir'], self.name)
         ensure_dir(self.checkpoint_dir)
@@ -63,8 +67,9 @@ class BaseTrainer:
                 if self.verbosity >= 1:
                     for key, value in log.items():
                         self.logger.info('    {:15s}: {}'.format(str(key), value))
-            if (self.monitor_mode == 'min' and log[self.monitor] < self.monitor_best)\
-                    or (self.monitor_mode == 'max' and log[self.monitor] > self.monitor_best):
+            if self.save_best \
+               and ((self.monitor_mode == 'min' and log[self.monitor] < self.monitor_best)\
+                    or (self.monitor_mode == 'max' and log[self.monitor] > self.monitor_best)):
                 self.monitor_best = log[self.monitor]
                 self._save_checkpoint(epoch, log, save_best=True)
             if epoch % self.save_freq == 0:
@@ -91,13 +96,12 @@ class BaseTrainer:
             'arch': arch,
             'epoch': epoch,
             'logger': self.train_logger,
-            'gen_state_dict': self.model['gen'].state_dict(),
-            'dis_state_dict': self.model['dis'].state_dict(),
-            'gen_optimizer': self.gen_optimizer.state_dict(),
-            'dis_optimizer': self.dis_optimizer.state_dict(),
-            'monitor_best': self.monitor_best,
+            'state_dict': self.model.state_dict(),
+            'optimizers': {name: optimizer.state_dict() for name, optimizer in self.optimizers.items()},
             'config': self.config
         }
+        if self.save_best:
+            state['monitor_best'] = self.monitor_best
         filename = os.path.join(self.checkpoint_dir, 'checkpoint-epoch{:03d}-loss-{:.4f}.pth.tar'
                                 .format(epoch, log['loss']))
         torch.save(state, filename)
@@ -116,11 +120,11 @@ class BaseTrainer:
         self.logger.info("Loading checkpoint: {} ...".format(resume_path))
         checkpoint = torch.load(resume_path)
         self.start_epoch = checkpoint['epoch'] + 1
-        self.monitor_best = checkpoint['monitor_best']
-        self.model['gen'].load_state_dict(checkpoint['gen_state_dict'])
-        self.model['dis'].load_state_dict(checkpoint['dis_state_dict'])
-        self.gen_optimizer.load_state_dict(checkpoint['gen_optimizer'])
-        self.dis_optimizer.load_state_dict(checkpoint['dis_optimizer'])
+        if self.save_best:
+            self.monitor_best = checkpoint['monitor_best']
+        self.model.load_state_dict(checkpoint['state_dict'])
+        for name, state in checkpoint['optimizers'].items():
+            self.optimizers[name].load_state_dict(state)
         self.train_logger = checkpoint['logger']
         self.config = checkpoint['config']
         self.logger.info("Checkpoint '{}' (epoch {}) loaded".format(resume_path, self.start_epoch))

@@ -18,12 +18,10 @@ def main(config, resume):
 
     data_loader = GanDataLoader(config)
     valid_data_loader = data_loader.split_validation()
-
-    generator = eval(config['arch']['generator'])(config)
-    discriminator = eval(config['arch']['discriminator'])(config)
     
-    model = {"gen": generator, "dis": discriminator}
-    for _, modules in model.items(): modules.summary()
+    model = eval(config['arch'])(config)
+    model.summary()
+
     loss = eval(config['loss'])
     metrics = [eval(metric) for metric in config['metrics']]
 
@@ -58,7 +56,8 @@ if __name__ == '__main__':
         path = os.path.join(config['trainer']['save_dir'], config['name'])
         if os.path.exists(path):
             opt = input("Warning: path {} already exists, continue? [y/N] ".format(path))
-            if opt.upper() != 'Y': exit(1)
+            if opt.upper() != 'Y':
+                exit(1)
     assert config is not None
 
     main(config, args.resume)

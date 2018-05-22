@@ -1,21 +1,63 @@
 {
-    "name": "GAN",
+    "name": "GAN08",
     "cuda": true,
+    "tips": {
+        "01. normalize input images": "true, toggle not implemented",
+        "02. modified loss function": "false, toggle not implemented",
+        "03. gaussian input noise": "true, toggle not implemented",
+        "04. batch normalization": "true, toggle not implemented",
+        "05. avoid sparse gradients": {
+            "enabled": true,
+            "type": "LeakyReLU",
+            "config": {
+                "negative_slope": 0.2,
+                "inplace": true
+            }
+        },
+        "06. soft and noisy labels": "false, toggle not implemented",
+        "09. use Adam optimizer": "true, toggle not implemented",
+        "13. noise to inputs to D with decay": {
+            "enabled": true,
+            "config": {
+                "var": 0.02,
+                "decay": "lambda noise, epoch: noise * (0.95 ** epoch)"
+            }
+        },
+        "14. train discriminator more": {
+            "enabled": true,
+            "config": {
+                "dis_iter": 3,
+                "gen_iter": 1
+            }
+        },
+        "17. dropouts in G": "false, toggle not implemented"
+    },
     "data_loader": {
         "data_dir1": "datasets/AnimeDataset/faces/",
         "data_dir2": "datasets/extra_data/images/",
-        "batch_size": 16,
+        "batch_size": 100,
         "shuffle": true,
-        "noise_dim": 8
+        "noise_dim": 16
     },
     "validation": {
         "validation_split": 0.1,
         "shuffle": true
     },
-    "optimizer_type": "Adam",
-    "optimizer": {
-        "lr": 0.001,
-        "weight_decay": 0
+    "optimizers": {
+        "generator": {
+            "type": "Adam",
+            "config": {
+                "lr": 0.001,
+                "weight_decay": 0
+            }
+        },
+        "discriminator": {
+            "type": "Adam",
+            "config": {
+                "lr": 0.0001,
+                "weight_decay": 0
+            }
+        }
     },
     "loss": "binary_crossentropy",
     "metrics": ["accuracy"],
@@ -24,14 +66,9 @@
         "save_dir": "saved/",
         "save_freq": 1,
         "verbosity": 2,
-        "monitor": "val_loss",
-        "monitor_mode": "min",
-        "gen-dis_training_ratio": 0.5
+        "save_best": false
     },
-    "arch": {
-        "generator": "GANGenerator",
-        "discriminator": "GANDiscriminator"
-    },
+    "arch": "GAN",
     "model": {
 
     }
