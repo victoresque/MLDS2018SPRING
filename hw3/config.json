@@ -1,5 +1,6 @@
 {
-    "name": "GAN09",
+    "name": "GAN14",
+    "note": "",
     "cuda": true,
     "tips": {
         "01": {
@@ -14,8 +15,8 @@
             "desc": "gaussian input noise",
             "enabled": "true, toggle not implemented"
         },
-        "04. batch normalization": {
-            "desc": "",
+        "04": {
+            "desc": "batch normalization",
             "enabled": "true, toggle not implemented"
         },
         "05": {
@@ -39,15 +40,17 @@
             "desc": "noise to inputs to D with decay",
             "enabled": true,
             "config": {
-                "var": 0.01,
+                "var": 0.02,
                 "decay": "lambda noise, epoch: noise * (0.95 ** epoch)"
             }
         },
         "14": {
             "desc": "train discriminator more",
             "enabled": true,
+            "adaptive": true,
             "config": {
-                "dis_iter": 3,
+                "val_acc_threshold": 0.8,
+                "dis_iter": 4,
                 "gen_iter": 1
             }
         },
@@ -84,7 +87,9 @@
         }
     },
     "loss": "binary_crossentropy",
-    "metrics": ["accuracy"],
+    "metrics": [
+        "accuracy"
+    ],
     "trainer": {
         "epochs": 1000,
         "save_dir": "saved/",
@@ -93,7 +98,5 @@
         "save_best": false
     },
     "arch": "GAN",
-    "model": {
-
-    }
+    "model": {}
 }

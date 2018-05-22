@@ -66,7 +66,8 @@ class BaseTrainer:
                 self.train_logger.add_entry(log)
                 if self.verbosity >= 1:
                     for key, value in log.items():
-                        self.logger.info('    {:15s}: {}'.format(str(key), value))
+                        if not key.startswith('full_'):
+                            self.logger.info('    {:15s}: {}'.format(str(key), value))
             if self.save_best \
                and ((self.monitor_mode == 'min' and log[self.monitor] < self.monitor_best)\
                     or (self.monitor_mode == 'max' and log[self.monitor] > self.monitor_best)):
