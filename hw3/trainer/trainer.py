@@ -34,8 +34,6 @@ class Trainer(BaseTrainer):
         self.gen_iter, self.dis_iter = (config['tips']['14']['config']['gen_iter'],
                                         config['tips']['14']['config']['dis_iter']) \
             if config['tips']['14']['enabled'] else (1, 1)
-        self.adaptive_dis_iter = config['tips']['14']['enabled'] and config['tips']['14']['adaptive']
-        self.val_acc_threshold = config['tips']['14']['config']['val_acc_threshold']
 
         # tensorboard configuration
         self.writer = SummaryWriter('../result_tensorboard')
@@ -103,8 +101,8 @@ class Trainer(BaseTrainer):
             self.dis_optimizer.step()
 
             sum_loss_d += loss_d.data[0]
-            n_loss_d += 1
             total_metrics += self._eval_metrics(fake_output, labels[:self.batch_size]) / 2
+            n_loss_d += 1
 
             # training on generator
             loss_g = None
@@ -123,7 +121,6 @@ class Trainer(BaseTrainer):
 
                     sum_loss_g += loss_g.data[0]
                     n_loss_g += 1
-                    total_metrics += self._eval_metrics(output, target)
 
                     # self.writer.add_image('image_result', grid, epoch)
 
@@ -141,49 +138,11 @@ class Trainer(BaseTrainer):
             'loss': (sum_loss_g + sum_loss_d) / (n_loss_g + n_loss_d),
             'loss_g': sum_loss_g / n_loss_g,
             'loss_d': sum_loss_d / n_loss_d,
-            'metrics': (total_metrics / (n_loss_g + n_loss_d)).tolist(),
+            'metrics': (total_metrics / n_loss_g).tolist(),
             'full_loss': full_loss
         }
 
-        if self.valid:
-            val_log = self._valid_epoch(epoch)
-            log = {**log, **val_log}
-
         return log
-
-    def _valid_epoch(self, epoch):
-        self.model.eval()
-        total_val_loss = 0
-        total_val_metrics = np.zeros(len(self.metrics))
-        result = torch.FloatTensor()
-        for batch_idx, (noise, real_images, labels) in enumerate(self.valid_data_loader):
-            noise = np.reshape(noise, (*noise.shape, 1, 1))
-            real_images = np.transpose(real_images, (0, 3, 1, 2))
-            noise, real_images, labels = self._to_variable(noise, real_images, labels)
-
-            gen_images = self.model.generator(noise)
-            images = torch.cat((gen_images, real_images), dim=0)
-            output = self.model.discriminator(images)
-            loss = self.loss(output, labels)
-
-            result = torch.cat((result, gen_images.cpu().data), dim=0)
-
-            total_val_loss += loss.data[0]
-            total_val_metrics += self._eval_metrics(output, labels)
-
-        # for tensorboard visualization
-        # grid = torchvision.utils.make_grid(result)
-        # self.writer.add_image('image_result', grid, epoch)
-        if self.adaptive_dis_iter:
-            if (total_val_metrics / len(self.valid_data_loader))[0] > self.val_acc_threshold:
-                self.dis_iter = self.dis_iter + 1
-            else:
-                self.dis_iter = self.config['tips']['14']['config']['dis_iter']
-
-        return {
-            'val_loss': total_val_loss / len(self.valid_data_loader),
-            'val_metrics': (total_val_metrics / len(self.valid_data_loader)).tolist()
-        }
 
     def __print_status(self, epoch, batch_idx, n_trained, n_data, loss_d, loss_g):
         if batch_idx == 0:
