@@ -11,11 +11,9 @@ class GAN(BaseModel):
     def __init__(self, config):
         super(GAN, self).__init__(config)
 
-        for key, value in config['tips'].items():
-            if key.startswith('05'):
-                global relu, relu_config
-                relu, relu_config = (getattr(nn, value['type']), value['config']) \
-                    if value['enabled'] else (nn.ReLU, {'inplace': True})
+        global relu, relu_config
+        relu, relu_config = (getattr(nn, config['tips']['05']['type']), config['tips']['05']['config']) \
+            if config['tips']['05']['enabled'] else (nn.ReLU, {'inplace': True})
 
         self.generator = self.Generator(config)
         self.discriminator = self.Discriminator(config)

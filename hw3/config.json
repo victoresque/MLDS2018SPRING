@@ -1,36 +1,58 @@
 {
-    "name": "GAN08",
+    "name": "GAN09",
     "cuda": true,
     "tips": {
-        "01. normalize input images": "true, toggle not implemented",
-        "02. modified loss function": "false, toggle not implemented",
-        "03. gaussian input noise": "true, toggle not implemented",
-        "04. batch normalization": "true, toggle not implemented",
-        "05. avoid sparse gradients": {
+        "01": {
+            "desc": "normalize input images",
+            "enabled": "true, toggle not implemented"
+        },
+        "02": {
+            "desc": "modified loss function",
+            "enabled": "false, toggle not implemented"
+        },
+        "03": {
+            "desc": "gaussian input noise",
+            "enabled": "true, toggle not implemented"
+        },
+        "04. batch normalization": {
+            "desc": "",
+            "enabled": "true, toggle not implemented"
+        },
+        "05": {
+            "desc": "avoid sparse gradients",
             "enabled": true,
-            "type": "LeakyReLU",
+            "type": "PReLU",
             "config": {
-                "negative_slope": 0.2,
-                "inplace": true
             }
         },
-        "06. soft and noisy labels": "false, toggle not implemented",
-        "09. use Adam optimizer": "true, toggle not implemented",
-        "13. noise to inputs to D with decay": {
+        "06": {
+            "desc": "soft and noisy labels",
+            "enabled": "false, toggle not implemented"
+        },
+        "09": {
+            "desc": "use Adam optimizer",
+            "enabled": "true, toggle not implemented"
+        },
+        "13": {
+            "desc": "noise to inputs to D with decay",
             "enabled": true,
             "config": {
                 "var": 0.02,
                 "decay": "lambda noise, epoch: noise * (0.95 ** epoch)"
             }
         },
-        "14. train discriminator more": {
+        "14": {
+            "desc": "train discriminator more",
             "enabled": true,
             "config": {
                 "dis_iter": 3,
                 "gen_iter": 1
             }
         },
-        "17. dropouts in G": "false, toggle not implemented"
+        "17": {
+            "desc": "dropouts in G",
+            "enabled": "false, toggle not implemented"
+        }
     },
     "data_loader": {
         "data_dir1": "datasets/AnimeDataset/faces/",
@@ -47,14 +69,14 @@
         "generator": {
             "type": "Adam",
             "config": {
-                "lr": 0.001,
+                "lr": 0.005,
                 "weight_decay": 0
             }
         },
         "discriminator": {
             "type": "Adam",
             "config": {
-                "lr": 0.0001,
+                "lr": 0.001,
                 "weight_decay": 0
             }
         }
@@ -64,7 +86,7 @@
     "trainer": {
         "epochs": 1000,
         "save_dir": "saved/",
-        "save_freq": 1,
+        "save_freq": 2,
         "verbosity": 2,
         "save_best": false
     },

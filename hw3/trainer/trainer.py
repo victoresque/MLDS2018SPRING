@@ -28,14 +28,12 @@ class Trainer(BaseTrainer):
         self.gen_optimizer = self.optimizers['generator']
         self.dis_optimizer = self.optimizers['discriminator']
 
-        for key, value in config['tips'].items():
-            if key.startswith('13'):
-                self.image_noise_var, self.image_noise_decay = (value['config']['var'],
-                                                                eval(value['config']['decay'])) \
-                    if value['enabled'] else (0, eval('lambda x, epoch: x'))
-            elif key.startswith('14'):
-                self.gen_iter, self.dis_iter = (value['config']['gen_iter'],
-                                                value['config']['dis_iter']) if value['enabled'] else (1, 1)
+        self.image_noise_var, self.image_noise_decay = (config['tips']['13']['config']['var'],
+                                                        eval(config['tips']['13']['config']['decay'])) \
+            if config['tips']['13']['enabled'] else (0, eval('lambda x, epoch: x'))
+        self.gen_iter, self.dis_iter = (config['tips']['14']['config']['gen_iter'],
+                                        config['tips']['14']['config']['dis_iter']) \
+            if config['tips']['14']['enabled'] else (1, 1)
 
         # tensorboard configuration
         self.writer = SummaryWriter('../result_tensorboard')
