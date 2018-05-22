@@ -20,8 +20,8 @@ class GAN(BaseModel):
         self.generator = self.Generator(config)
         self.discriminator = self.Discriminator(config)
 
-    def forward(self, *input):
-        pass
+    def forward(self, noise):
+        return self.generator(noise)
 
     class Generator(nn.Module):
         def __init__(self, config):

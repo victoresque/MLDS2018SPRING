@@ -62,6 +62,7 @@ class Trainer(BaseTrainer):
         if self.with_cuda:
             self.model.cuda()
 
+        full_loss = []
         sum_loss_g, n_loss_g = 0, 0
         sum_loss_d, n_loss_d = 0, 0
         total_metrics = np.zeros(len(self.metrics))
@@ -106,6 +107,7 @@ class Trainer(BaseTrainer):
             total_metrics += self._eval_metrics(fake_output, labels[:self.batch_size]) / 2
 
             # training on generator
+            loss_g = None
             if batch_idx % self.dis_iter == 0:
                 for i in range(self.gen_iter):
                     self.gen_optimizer.zero_grad()
@@ -125,15 +127,22 @@ class Trainer(BaseTrainer):
 
                     # self.writer.add_image('image_result', grid, epoch)
 
+            full_loss.append({
+                'loss_g': loss_g.data[0] if loss_g is not None else None,
+                'loss_d': loss_d.data[0]
+            })
+
             if self.verbosity >= 2:
-                self.__print_status(epoch, batch_idx, batch_idx+1, len(self.data_loader),
-                                    loss_d.data[0], loss_g.data[0])
+                self.__print_status(epoch, batch_idx, batch_idx+1,
+                                    len(self.data_loader), loss_d.data[0],
+                                    loss_g.data[0] if loss_g is not None else 0)
 
         log = {
             'loss': (sum_loss_g + sum_loss_d) / (n_loss_g + n_loss_d),
             'loss_g': sum_loss_g / n_loss_g,
             'loss_d': sum_loss_d / n_loss_d,
-            'metrics': (total_metrics / (len(self.data_loader))).tolist()
+            'metrics': (total_metrics / (n_loss_g + n_loss_d)).tolist(),
+            'full_loss': full_loss
         }
 
         if self.valid:
