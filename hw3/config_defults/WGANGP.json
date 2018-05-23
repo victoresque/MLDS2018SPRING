@@ -1,0 +1,108 @@
+{
+    "name": "WGANGP",
+    "note": "",
+    "cuda": true,
+    "tips": {
+        "01": {
+            "desc": "normalize input images",
+            "note": "toggle not implemented",
+            "enabled": true
+        },
+        "02": {
+            "desc": "modified loss function",
+            "note": "use [max log(D)] instead of [min log(1-D)]",
+            "enabled": false
+        },
+        "03": {
+            "desc": "gaussian input noise",
+            "note": "toggle not implemented",
+            "enabled": true
+        },
+        "04": {
+            "desc": "batch normalization",
+            "note": "toggle not implemented",
+            "enabled": true
+        },
+        "05": {
+            "desc": "avoid sparse gradients",
+            "enabled": true,
+            "type": "LeakyReLU",
+            "config": {
+                "negative_slope": 0.2,
+                "inplace": true
+            }
+        },
+        "06": {
+            "desc": "soft and noisy labels",
+            "note": "toggle not implemented",
+            "enabled": false
+        },
+        "09": {
+            "desc": "use Adam optimizer",
+            "note": "toggle not implemented",
+            "enabled": true
+        },
+        "13": {
+            "desc": "noise to inputs to D with decay",
+            "enabled": false,
+            "config": {
+                "var": 0.02,
+                "decay": "lambda noise, epoch: noise * (0.95 ** epoch)"
+            }
+        },
+        "14": {
+            "desc": "train discriminator more",
+            "enabled": true,
+            "config": {
+                "dis_iter": 5,
+                "gen_iter": 1
+            }
+        },
+        "17": {
+            "desc": "dropouts in G",
+            "note": "toggle not implemented",
+            "enabled": false
+        }
+    },
+    "data_loader": {
+        "data_dir1": "datasets/AnimeDataset/faces/",
+        "data_dir2": "datasets/extra_data/images/",
+        "batch_size": 128,
+        "shuffle": true
+    },
+    "validation": {
+        "validation_split": 0,
+        "shuffle": true
+    },
+    "optimizers": {
+        "generator": {
+            "type": "Adam",
+            "config": {
+                "lr": 0.0001,
+                "betas": [0, 0.9]
+            }
+        },
+        "discriminator": {
+            "type": "Adam",
+            "config": {
+                "lr": 0.0001,
+                "betas": [0, 0.9]
+            }
+        }
+    },
+    "metrics": [],
+    "trainer": {
+        "epochs": 1000,
+        "save_dir": "saved/",
+        "save_freq": 2,
+        "verbosity": 2,
+        "save_best": false
+    },
+    "arch": "WGANGP",
+    "model": {
+        "noise_dim": 100
+    },
+    "loss": {
+        "lambda": 10
+    }
+}
