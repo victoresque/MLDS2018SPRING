@@ -27,7 +27,9 @@ class Trainer(BaseTrainer):
 
         self.gen_optimizer = self.optimizers['generator']
         self.dis_optimizer = self.optimizers['discriminator']
+        self.noise_dim = model.generator.noise_dim
 
+        # tips
         self.image_noise_var, self.image_noise_decay = (config['tips']['13']['config']['var'],
                                                         eval(config['tips']['13']['config']['decay'])) \
             if config['tips']['13']['enabled'] else (0, eval('lambda x, epoch: x'))
@@ -41,10 +43,13 @@ class Trainer(BaseTrainer):
     def _to_variable(self, *args):
         return_var = []
         for data in args:
-            return_var.append(Variable(torch.FloatTensor(data)))
+            if isinstance(data, np.ndarray):
+                return_var.append(Variable(torch.FloatTensor(data)))
+            else:
+                return_var.append(Variable(data))
         if self.with_cuda:
             return_var = [data.cuda() for data in return_var]
-        return return_var
+        return return_var if len(return_var) > 1 else return_var[0]
 
     def _eval_metrics(self, output, target):
         acc_metrics = np.zeros(len(self.metrics))
@@ -64,58 +69,54 @@ class Trainer(BaseTrainer):
         sum_loss_g, n_loss_g = 0, 0
         sum_loss_d, n_loss_d = 0, 0
         total_metrics = np.zeros(len(self.metrics))
-        for batch_idx, (noise, real_images, labels) in enumerate(self.data_loader):
-            noise = np.reshape(noise, (*noise.shape, 1, 1))
+        for batch_idx, (real_images, ) in enumerate(self.data_loader):
+            input_noise = torch.randn(self.batch_size, self.noise_dim, 1, 1)
             real_images = np.transpose(real_images, (0, 3, 1, 2))  # (batch, channel(BGR), width, height)
-            noise, real_images, labels = self._to_variable(noise, real_images, labels)
+            real_labels = torch.ones(self.batch_size)
+            input_noise, real_images, real_labels = self._to_variable(input_noise, real_images, real_labels)
 
             # add noise to real images (tip 13)
             image_noise = torch.randn(*real_images.size()) * self.image_noise_var
             image_noise = self.image_noise_decay(image_noise, epoch)
-            image_noise = Variable(image_noise)
-            image_noise = image_noise.cuda() if self.with_cuda else image_noise
+            image_noise = self._to_variable(image_noise)
             real_images = real_images + image_noise
 
             # training on discriminator
             # real part
-            self.dis_optimizer.zero_grad()
             real_output = self.model.discriminator(real_images)
-            real_loss = self.loss(real_output, labels[self.batch_size:])
-            total_metrics += self._eval_metrics(real_output, labels[self.batch_size:]) / 2
+            real_loss = self.loss(real_output, real_labels)
 
             # fake part
-            gen_images = self.model.generator(noise)
+            fake_images = self.model.generator(input_noise)
+            fake_output = self.model.discriminator(fake_images)
+            fake_labels = self._to_variable(torch.zeros(self.batch_size))
+            fake_loss = self.loss(fake_output, fake_labels)
 
-            # training process visualization
-            imgs = (gen_images.cpu().data[:64] + 1) / 2
-            grid = torchvision.utils.make_grid(imgs).numpy()
-            grid = np.transpose(grid, (1, 2, 0))
-            cv2.imshow('generated images', grid)
-            cv2.waitKey(1)
-
-            fake_output = self.model.discriminator(gen_images)
-            fake_loss = self.loss(fake_output, labels[:self.batch_size])
-
+            self.dis_optimizer.zero_grad()
             loss_d = (real_loss + fake_loss) / 2
             loss_d.backward()
             self.dis_optimizer.step()
 
             sum_loss_d += loss_d.data[0]
-            total_metrics += self._eval_metrics(fake_output, labels[:self.batch_size]) / 2
+            total_metrics += self._eval_metrics(real_output, real_labels) / 2
+            total_metrics += self._eval_metrics(fake_output, fake_labels) / 2
             n_loss_d += 1
+
+            # fake images visualization
+            self.__visualize(fake_images)
 
             # training on generator
             loss_g = None
             if batch_idx % self.dis_iter == 0:
                 for i in range(self.gen_iter):
-                    self.gen_optimizer.zero_grad()
-                    noise = torch.randn(*noise.size())
-                    noise = Variable(noise).cuda() if self.with_cuda else Variable(noise)
-                    gen_images = self.model.generator(noise)
-                    output = self.model.discriminator(gen_images)
+                    input_noise = torch.randn(*input_noise.size())
+                    fake_target = torch.ones(self.batch_size)
+                    input_noise, fake_target = self._to_variable(input_noise, fake_target)
+                    fake_images = self.model.generator(input_noise)
+                    fake_output = self.model.discriminator(fake_images)
 
-                    target = labels[self.batch_size:]
-                    loss_g = self.loss(output, target)
+                    self.gen_optimizer.zero_grad()
+                    loss_g = self.loss(fake_output, fake_target)
                     loss_g.backward()
                     self.gen_optimizer.step()
 
@@ -153,3 +154,10 @@ class Trainer(BaseTrainer):
         sys.stdout.flush()
         if batch_idx == n_data-1:
             print('')
+
+    def __visualize(self, fake_images):
+        fake_images = (fake_images.cpu().data[:64] + 1) / 2
+        grid = torchvision.utils.make_grid(fake_images).numpy()
+        grid = np.transpose(grid, (1, 2, 0))
+        cv2.imshow('generated images', grid)
+        cv2.waitKey(1)

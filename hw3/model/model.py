@@ -25,7 +25,7 @@ class GAN(BaseModel):
         def __init__(self, config):
             super(GAN.Generator, self).__init__()
             self.config = config
-            self.noise_dim = config['data_loader']['noise_dim']
+            self.noise_dim = config['model']['noise_dim']
 
             global relu, relu_config
             self.conv_trans = nn.Sequential(
