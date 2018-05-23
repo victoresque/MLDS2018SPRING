@@ -3,11 +3,10 @@ import json
 import logging
 import argparse
 import torch
-from model.model import *
-from model.loss import *
+from model import *
 from model.metric import *
 from data_loader import GanDataLoader
-from trainer import Trainer
+from trainer import *
 from logger import Logger
 
 logging.basicConfig(level=logging.INFO, format='')
@@ -22,17 +21,14 @@ def main(config, resume):
     model = eval(config['arch'])(config)
     model.summary()
 
-    loss = eval(config['loss'])
     metrics = [eval(metric) for metric in config['metrics']]
 
-    trainer = Trainer(model, loss, metrics,
-                      resume=resume,
-                      config=config,
-                      data_loader=data_loader,
-                      valid_data_loader=valid_data_loader,
-                      train_logger=train_logger)
-
-    trainer.train()
+    eval(config['arch']+'Trainer')(model, None, metrics,
+                                   resume=resume,
+                                   config=config,
+                                   data_loader=data_loader,
+                                   valid_data_loader=valid_data_loader,
+                                   train_logger=train_logger).train()
 
 
 if __name__ == '__main__':

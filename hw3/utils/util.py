@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import torch
 import torchvision
@@ -26,7 +27,10 @@ def to_variable(with_cuda, *args):
     for data in args:
         if isinstance(data, np.ndarray):
             return_var.append(Variable(torch.FloatTensor(data)))
+        elif isinstance(data, Variable):
+            return_var.append(data)
         else:
+            data = data.type(torch.FloatTensor)
             return_var.append(Variable(data))
     if with_cuda:
         return_var = [data.cuda() for data in return_var]
@@ -39,3 +43,14 @@ def show_grid(images):
     grid = np.transpose(grid, (1, 2, 0))
     cv2.imshow('generated images', grid)
     cv2.waitKey(1)
+
+
+def print_status(epoch, batch_idx, n_trained, n_data, loss_d, loss_g):
+    if batch_idx == 0:
+        print('')
+    log_msg = '\rTrain Epoch: {} [{}/{} ({:.0f}%)] Loss: D:{:.6f}, G:{:.6f}'.format(
+        epoch, n_trained, n_data, 100.0 * n_trained / n_data, loss_d, loss_g)
+    sys.stdout.write(log_msg)
+    sys.stdout.flush()
+    if batch_idx == n_data-1:
+        print('')

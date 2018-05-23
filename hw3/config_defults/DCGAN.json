@@ -1,6 +1,6 @@
 {
-    "name": "WGANGP",
-    "note": "",
+    "name": "DCGAN",
+    "note": "Same configurations as in 'Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks (ICLR'16)'",
     "cuda": true,
     "tips": {
         "01": {
@@ -10,7 +10,7 @@
         },
         "02": {
             "desc": "modified loss function",
-            "note": "use [max log(D)] instead of [min log(1-D)]",
+            "note": "toggle not implemented",
             "enabled": false
         },
         "03": {
@@ -52,9 +52,9 @@
         },
         "14": {
             "desc": "train discriminator more",
-            "enabled": true,
+            "enabled": false,
             "config": {
-                "dis_iter": 5,
+                "dis_iter": 1,
                 "gen_iter": 1
             }
         },
@@ -78,19 +78,21 @@
         "generator": {
             "type": "Adam",
             "config": {
-                "lr": 0.0001,
-                "betas": [0, 0.9]
+                "lr": 0.0002,
+                "betas": [0.5, 0.999]
             }
         },
         "discriminator": {
             "type": "Adam",
             "config": {
-                "lr": 0.0001,
-                "betas": [0, 0.9]
+                "lr": 0.0002,
+                "betas": [0.5, 0.999]
             }
         }
     },
-    "metrics": [],
+    "metrics": [
+        "accuracy"
+    ],
     "trainer": {
         "epochs": 1000,
         "save_dir": "saved/",
@@ -98,11 +100,8 @@
         "verbosity": 2,
         "save_best": false
     },
-    "arch": "WGANGP",
+    "arch": "DCGAN",
     "model": {
         "noise_dim": 100
-    },
-    "loss": {
-        "lambda": 10
     }
 }

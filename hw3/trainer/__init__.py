@@ -1,1 +1,2 @@
-from .trainer import *
+from .DCGANTrainer import *
+from .WGANGPTrainer import *
