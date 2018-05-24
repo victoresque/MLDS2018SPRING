@@ -1,6 +1,6 @@
 {
     "name": "DCGAN",
-    "note": "Same configurations as in 'Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks (ICLR'16)'",
+    "note": "",
     "cuda": true,
     "tips": {
         "01": {
@@ -10,7 +10,7 @@
         },
         "02": {
             "desc": "modified loss function",
-            "note": "toggle not implemented",
+            "note": "use [max log(D)] instead of [min log(1-D)]",
             "enabled": false
         },
         "03": {
@@ -20,16 +20,29 @@
         },
         "04": {
             "desc": "batch normalization",
-            "note": "toggle not implemented",
-            "enabled": true
+            "generator": {
+                "enabled": true
+            },
+            "discriminator": {
+                "enabled": true
+            }
         },
         "05": {
             "desc": "avoid sparse gradients",
+            "note": "if enabled, use the specified non-linearity, otherwise ignore the configs",
             "enabled": true,
-            "type": "LeakyReLU",
-            "config": {
-                "negative_slope": 0.2,
-                "inplace": true
+            "generator": {
+                "type": "ReLU",
+                "config": {
+                    "inplace": true
+                }
+            },
+            "discriminator": {
+                "type": "LeakyReLU",
+                "config": {
+                    "negative_slope": 0.2,
+                    "inplace": true
+                }
             }
         },
         "06": {
@@ -44,6 +57,7 @@
         },
         "13": {
             "desc": "noise to inputs to D with decay",
+            "note": "if not enabled, configs are ignored",
             "enabled": false,
             "config": {
                 "var": 0.02,
@@ -52,6 +66,7 @@
         },
         "14": {
             "desc": "train discriminator more",
+            "note": "if not enabled, configs are ignored",
             "enabled": false,
             "config": {
                 "dis_iter": 1,
@@ -60,8 +75,9 @@
         },
         "17": {
             "desc": "dropouts in G",
-            "note": "toggle not implemented",
-            "enabled": false
+            "note": "the dropout rate is the same specified as in arXiv:1611.07004",
+            "enabled": false,
+            "rate": 0.5
         }
     },
     "data_loader": {

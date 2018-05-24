@@ -20,16 +20,30 @@
         },
         "04": {
             "desc": "batch normalization",
-            "note": "toggle not implemented",
-            "enabled": true
+            "generator": {
+                "enabled": true
+            },
+            "discriminator": {
+                "enabled": false
+            }
         },
         "05": {
             "desc": "avoid sparse gradients",
+            "note": "if enabled, use the specified non-linearity, otherwise ignore the configs",
             "enabled": true,
-            "type": "LeakyReLU",
-            "config": {
-                "negative_slope": 0.2,
-                "inplace": true
+            "generator": {
+                "type": "LeakyReLU",
+                "config": {
+                    "negative_slope": 0.2,
+                    "inplace": true
+                }
+            },
+            "discriminator": {
+                "type": "LeakyReLU",
+                "config": {
+                    "negative_slope": 0.2,
+                    "inplace": true
+                }
             }
         },
         "06": {
@@ -44,6 +58,7 @@
         },
         "13": {
             "desc": "noise to inputs to D with decay",
+            "note": "if not enabled, configs are ignored",
             "enabled": false,
             "config": {
                 "var": 0.02,
@@ -52,16 +67,18 @@
         },
         "14": {
             "desc": "train discriminator more",
-            "enabled": true,
+            "note": "if not enabled, configs are ignored",
+            "enabled": false,
             "config": {
-                "dis_iter": 5,
+                "dis_iter": 1,
                 "gen_iter": 1
             }
         },
         "17": {
             "desc": "dropouts in G",
-            "note": "toggle not implemented",
-            "enabled": false
+            "note": "the dropout rate is the same specified as in arXiv:1611.07004",
+            "enabled": false,
+            "rate": 0.5
         }
     },
     "data_loader": {
