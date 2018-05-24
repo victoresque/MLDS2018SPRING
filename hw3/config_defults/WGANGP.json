@@ -1,5 +1,6 @@
 {
     "name": "WGANGP",
+    "arch": "WGANGP",
     "note": "",
     "cuda": true,
     "tips": {
@@ -91,6 +92,12 @@
         "validation_split": 0,
         "shuffle": true
     },
+    "model": {
+        "noise_dim": 100
+    },
+    "loss": {
+        "lambda": 10
+    },
     "optimizers": {
         "generator": {
             "type": "Adam",
@@ -114,12 +121,5 @@
         "save_freq": 2,
         "verbosity": 2,
         "save_best": false
-    },
-    "arch": "WGANGP",
-    "model": {
-        "noise_dim": 100
-    },
-    "loss": {
-        "lambda": 10
     }
 }

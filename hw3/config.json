@@ -1,5 +1,6 @@
 {
     "name": "DCGAN0001",
+    "arch": "DCGAN",
     "note": "",
     "cuda": true,
     "tips": {
@@ -91,6 +92,9 @@
         "validation_split": 0,
         "shuffle": true
     },
+    "model": {
+        "noise_dim": 100
+    },
     "optimizers": {
         "generator": {
             "type": "Adam",
@@ -116,9 +120,5 @@
         "save_freq": 2,
         "verbosity": 2,
         "save_best": false
-    },
-    "arch": "DCGAN",
-    "model": {
-        "noise_dim": 100
     }
 }
