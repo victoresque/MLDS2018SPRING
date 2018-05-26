@@ -69,9 +69,9 @@
         "14": {
             "desc": "train discriminator more",
             "note": "if not enabled, configs are ignored",
-            "enabled": false,
+            "enabled": true,
             "config": {
-                "dis_iter": 1,
+                "dis_iter": 5,
                 "gen_iter": 1
             }
         },
