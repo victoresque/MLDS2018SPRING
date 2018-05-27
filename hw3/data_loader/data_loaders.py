@@ -60,7 +60,7 @@ class GanDataLoader(BaseDataLoader):
 
 class CGanDataLoader(BaseDataLoader):
     def __init__(self, config):
-        super(GanDataLoader, self).__init__(config)
+        super(CGanDataLoader, self).__init__(config)
         self.data_dir1 = config['data_loader']['data_dir1']
         self.data_dir2 = config['data_loader']['data_dir2']
         self.tags1_path = os.path.join(self.data_dir1, '../tags_clean.csv')
@@ -144,9 +144,10 @@ class CGanDataLoader(BaseDataLoader):
             self.images.append(img)
             self.encoded_tags.append(self.embedder.encode_feature(self.img_tags2[img_idx]))
         self.images = (np.array(self.images) - 127.5)/127.5
+        self.encoded_tags = np.array(self.encoded_tags)
 
     def __iter__(self):
-        super(GanDataLoader, self).__iter__()
+        super(CGanDataLoader, self).__iter__()
         return self
 
     def __next__(self):
@@ -154,20 +155,20 @@ class CGanDataLoader(BaseDataLoader):
         :return: img
             shape = (batch_size, 64, 64, 3)
         """
-        batch = super(GanDataLoader, self).__next__()
+        batch = super(CGanDataLoader, self).__next__()
         batch = [np.array(sample) for sample in batch]
         return batch
 
     def _pack_data(self):
-        return list(zip(self.images))
+        return list(zip(self.images, self.encoded_tags))
 
     def _unpack_data(self, packed):
         unpacked = list(zip(*packed))
-        unpacked = [list(item) for item in unpacked]
+        unpacked = [np.array(item) for item in unpacked]
         return unpacked
 
     def _update_data(self, unpacked):
-        self.images, = np.array(unpacked)
+        self.images, self.encoded_tags = unpacked
 
     def _n_samples(self):
         return len(self.images)
@@ -175,8 +176,8 @@ class CGanDataLoader(BaseDataLoader):
 
 if __name__ == '__main__':
     import json
-    test = GanDataLoader(json.load(open('config.json')))
+    test = CGanDataLoader(json.load(open('config.json')))
+    print(test.images.shape, test.encoded_tags.shape)
     i = iter(test)
-    print(test.images.shape)
-    a,b,c = next(i)
-    print(a.shape, b.shape, c.shape)
+    a,b = next(i)
+    print(a.shape, b.shape)

@@ -78,6 +78,6 @@ class Embedder:
         """
         hair_code = self.hair_dict[feature['hair'][0]]
         eyes_code = self.eyes_dict[feature['eyes'][0]]
-        return np.concatenate((hair_code, eyes_code), dim=0)
+        return np.concatenate((hair_code, eyes_code), axis=0)
             
         
