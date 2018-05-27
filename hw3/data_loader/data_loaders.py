@@ -78,6 +78,11 @@ class CGanDataLoader(BaseDataLoader):
         self.__parse_images()
 
     def __parse_features(self, embedder_path):
+        """
+        valid features:
+            hair: ['aqua', 'black', 'blonde', 'blue', 'brown', 'gray', 'green', 'orange', 'pink', 'purple', 'red', 'white'] 
+            eyes: ['aqua', 'black', 'blue', 'brown', 'green', 'orange', 'pink', 'purple', 'red', 'yellow']
+        """
         hair_attr, eyes_attr = [], []
         hair_stoplist = ['damage', 'long', 'short', 'pubic']
         eyes_stoplist = ['bicolored', 'gray']
@@ -152,8 +157,8 @@ class CGanDataLoader(BaseDataLoader):
 
     def __next__(self):
         """
-        :return: img
-            shape = (batch_size, 64, 64, 3)
+        :return: img, encoded_tags
+            shape = (batch_size, 64, 64, 3), (batch_size, 22)
         """
         batch = super(CGanDataLoader, self).__next__()
         batch = [np.array(sample) for sample in batch]
