@@ -5,7 +5,7 @@ import argparse
 import torch
 from model import *
 from model.metric import *
-from data_loader import GanDataLoader
+from data_loader import *
 from trainer import *
 from logger import Logger
 
@@ -15,7 +15,10 @@ logging.basicConfig(level=logging.INFO, format='')
 def main(config, resume):
     train_logger = Logger()
 
-    data_loader = GanDataLoader(config)
+    if config['arch'] == 'CGAN':
+        data_loader = CGanDataLoader(config)
+    else:
+        data_loader = GanDataLoader(config)
     valid_data_loader = data_loader.split_validation()
     
     model = eval(config['arch'])(config)
