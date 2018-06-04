@@ -74,7 +74,7 @@ class DCGANTrainer(BaseTrainer):
             loss_d.backward()
             self.dis_optimizer.step()
 
-            sum_loss_d += loss_d.data[0]
+            sum_loss_d += loss_d.data[0] if len(loss_d.data) else 0
             total_metrics += eval_metrics(self.metrics, real_critic, real_labels) / 2
             total_metrics += eval_metrics(self.metrics, fake_critic, fake_labels) / 2
             n_loss_d += 1
@@ -98,21 +98,21 @@ class DCGANTrainer(BaseTrainer):
                     loss_g.backward()
                     self.gen_optimizer.step()
 
-                    sum_loss_g += loss_g.data[0]
+                    sum_loss_g += loss_g.data[0] if len(loss_g.data) else 0
                     n_loss_g += 1
 
                     # self.writer.add_image('image_result', grid, epoch)
 
             full_loss.append({
                 'iter': batch_idx,
-                'loss_g': loss_g.data[0] if loss_g is not None else None,
-                'loss_d': loss_d.data[0]
+                'loss_g': (loss_g.data[0] if len(loss_g.data) else 0) if loss_g is not None else None,
+                'loss_d': loss_d.data[0] if len(loss_d.data) else 0
             })
 
             if self.verbosity >= 2:
                 print_status(epoch, batch_idx, batch_idx+1,
-                             len(self.data_loader), loss_d.data[0],
-                             loss_g.data[0] if loss_g is not None else 0)
+                             len(self.data_loader), loss_d.data[0] if len(loss_d.data) else 0,
+                             (loss_g.data[0] if len(loss_g.data) else 0) if loss_g is not None else 0)
 
         log = {
             'loss': (sum_loss_g + sum_loss_d) / (n_loss_g + n_loss_d),
@@ -138,7 +138,7 @@ class DCGANTrainer(BaseTrainer):
         sum_loss_g, n_loss_g = 0, 0
         sum_loss_d, n_loss_d = 0, 0
         total_metrics = np.zeros(len(self.metrics))
-        for batch_idx, (real_images, ) in enumerate(self.data_loader):
+        for batch_idx, (real_images, ) in enumerate(self.valid_data_loader):
             input_noise = torch.randn(self.batch_size, self.noise_dim, 1, 1)
             real_images = np.transpose(real_images, (0, 3, 1, 2))  # (batch, channel(BGR), width, height)
 
@@ -161,7 +161,7 @@ class DCGANTrainer(BaseTrainer):
             fake_loss = F.binary_cross_entropy(fake_critic, fake_labels)
 
             loss_d = (real_loss + fake_loss) / 2
-            sum_loss_d += loss_d.data[0]
+            sum_loss_d += loss_d.data[0] if len(loss_d.data) else 0
             total_metrics += eval_metrics(self.metrics, real_critic, real_labels) / 2
             total_metrics += eval_metrics(self.metrics, fake_critic, fake_labels) / 2
             n_loss_d += 1
@@ -177,19 +177,19 @@ class DCGANTrainer(BaseTrainer):
                     fake_critic = self.model.discriminator(fake_images)
 
                     loss_g = self.generator_loss(fake_critic, fake_target)
-                    sum_loss_g += loss_g.data[0]
+                    sum_loss_g += loss_g.data[0] if len(loss_g.data) else 0
                     n_loss_g += 1
 
             full_loss.append({
                 'iter': batch_idx,
-                'loss_g': loss_g.data[0] if loss_g is not None else None,
-                'loss_d': loss_d.data[0]
+                'loss_g': (loss_g.data[0] if len(loss_g.data) else 0) if loss_g is not None else None,
+                'loss_d': loss_d.data[0] if len(loss_d.data) else 0
             })
 
             if self.verbosity >= 2:
                 print_status(epoch, batch_idx, batch_idx+1,
-                             len(self.data_loader), loss_d.data[0],
-                             loss_g.data[0] if loss_g is not None else 0, mode='valid')
+                             len(self.valid_data_loader), loss_d.data[0] if len(loss_d.data) else 0,
+                             (loss_g.data[0] if len(loss_g.data) else 0) if loss_g is not None else 0, mode='valid')
 
         log = {
             'val_loss': (sum_loss_g + sum_loss_d) / (n_loss_g + n_loss_d),
