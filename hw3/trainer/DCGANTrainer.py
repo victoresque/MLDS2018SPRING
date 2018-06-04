@@ -12,7 +12,7 @@ def modified_generator_loss(pred, _):
 
 
 class DCGANTrainer(BaseTrainer):
-    def __init__(self, model, loss, metrics, resume, config,
+    def __init__(self, model, loss, metrics, vis, resume, config,
                  data_loader, valid_data_loader=None, train_logger=None):
         super(DCGANTrainer, self).__init__(model, loss, metrics, resume, config, train_logger)
         self.config = config
@@ -20,6 +20,7 @@ class DCGANTrainer(BaseTrainer):
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
         self.valid = True if self.valid_data_loader is not None else False
+        self.vis = vis
 
         self.gen_optimizer = self.optimizers['generator']
         self.dis_optimizer = self.optimizers['discriminator']
@@ -79,7 +80,8 @@ class DCGANTrainer(BaseTrainer):
             n_loss_d += 1
 
             # fake images visualization
-            show_grid(fake_images)
+            if self.vis:
+                show_grid(fake_images)
 
             # training on generator
             loss_g = None

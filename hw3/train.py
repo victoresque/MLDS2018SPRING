@@ -12,7 +12,7 @@ from logger import Logger
 logging.basicConfig(level=logging.INFO, format='')
 
 
-def main(config, resume):
+def main(config, resume, no_vis):
     train_logger = Logger()
 
     if config['arch'] == 'CGAN':
@@ -27,6 +27,7 @@ def main(config, resume):
     metrics = [eval(metric) for metric in config['metrics']]
 
     eval(config['arch']+'Trainer')(model, None, metrics,
+                                   vis=not no_vis,
                                    resume=resume,
                                    config=config,
                                    data_loader=data_loader,
@@ -42,6 +43,8 @@ if __name__ == '__main__':
                         help='config file path (default: None)')
     parser.add_argument('-r', '--resume', default=None, type=str,
                         help='path to latest checkpoint (default: None)')
+    parser.add_argument('--no-vis', action='store_true',
+                        help='disable generated image visualization')
 
     args = parser.parse_args()
 
@@ -59,4 +62,4 @@ if __name__ == '__main__':
                 exit(1)
     assert config is not None
 
-    main(config, args.resume)
+    main(config, args.resume, args.no_vis)
