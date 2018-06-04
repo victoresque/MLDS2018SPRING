@@ -120,4 +120,81 @@ class DCGANTrainer(BaseTrainer):
             'full_loss': full_loss
         }
 
+        if self.valid:
+            val_log = self._valid_epoch(epoch)
+            return {**log, **val_log}
+        else:
+            return log
+
+    def _valid_epoch(self, epoch):
+        self.model.eval()
+
+        if self.with_cuda:
+            self.model.cuda()
+
+        full_loss = []
+        sum_loss_g, n_loss_g = 0, 0
+        sum_loss_d, n_loss_d = 0, 0
+        total_metrics = np.zeros(len(self.metrics))
+        for batch_idx, (real_images, ) in enumerate(self.data_loader):
+            input_noise = torch.randn(self.batch_size, self.noise_dim, 1, 1)
+            real_images = np.transpose(real_images, (0, 3, 1, 2))  # (batch, channel(BGR), width, height)
+
+            real_labels = torch.ones(self.batch_size)
+            fake_labels = torch.zeros(self.batch_size)
+
+            # add noise to real images (tip 13)
+            image_noise = torch.randn(*real_images.shape) * self.image_noise_var
+            image_noise = self.image_noise_decay(image_noise, epoch)
+            real_images = real_images + image_noise
+
+            input_noise, real_images, real_labels, fake_labels = \
+                to_variable(self.with_cuda, input_noise, real_images, real_labels, fake_labels)
+
+            # training on discriminator
+            fake_images = self.model.generator(input_noise)
+            real_critic = self.model.discriminator(real_images)
+            fake_critic = self.model.discriminator(fake_images)
+            real_loss = F.binary_cross_entropy(real_critic, real_labels)
+            fake_loss = F.binary_cross_entropy(fake_critic, fake_labels)
+
+            loss_d = (real_loss + fake_loss) / 2
+            sum_loss_d += loss_d.data[0]
+            total_metrics += eval_metrics(self.metrics, real_critic, real_labels) / 2
+            total_metrics += eval_metrics(self.metrics, fake_critic, fake_labels) / 2
+            n_loss_d += 1
+
+            # generator
+            loss_g = None
+            if batch_idx % self.dis_iter == 0:
+                for i in range(self.gen_iter):
+                    input_noise = torch.randn(*input_noise.size())
+                    fake_target = torch.ones(self.batch_size)
+                    input_noise, fake_target = to_variable(self.with_cuda, input_noise, fake_target)
+                    fake_images = self.model.generator(input_noise)
+                    fake_critic = self.model.discriminator(fake_images)
+
+                    loss_g = self.generator_loss(fake_critic, fake_target)
+                    sum_loss_g += loss_g.data[0]
+                    n_loss_g += 1
+
+            full_loss.append({
+                'iter': batch_idx,
+                'loss_g': loss_g.data[0] if loss_g is not None else None,
+                'loss_d': loss_d.data[0]
+            })
+
+            if self.verbosity >= 2:
+                print_status(epoch, batch_idx, batch_idx+1,
+                             len(self.data_loader), loss_d.data[0],
+                             loss_g.data[0] if loss_g is not None else 0, mode='valid')
+
+        log = {
+            'val_loss': (sum_loss_g + sum_loss_d) / (n_loss_g + n_loss_d),
+            'val_loss_g': sum_loss_g / n_loss_g,
+            'val_loss_d': sum_loss_d / n_loss_d,
+            'val_metrics': (total_metrics / n_loss_d).tolist(),
+            'full_val_loss': full_loss
+        }
+
         return log

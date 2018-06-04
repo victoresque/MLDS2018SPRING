@@ -1,5 +1,5 @@
 {
-    "name": "CGAN_001",
+    "name": "CGAN00001",
     "arch": "CGAN",
     "note": "",
     "cuda": true,
@@ -88,7 +88,7 @@
         "shuffle": true
     },
     "validation": {
-        "validation_split": 0,
+        "validation_split": 0.1,
         "shuffle": true
     },
     "model": {

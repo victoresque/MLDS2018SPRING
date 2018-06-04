@@ -123,4 +123,5 @@ class CGAN(BaseModel):
             combined = torch.cat((output, emb), 1)
             critic = self.critic(combined)
             critic = torch.nn.functional.sigmoid(critic)
+            critic = critic.squeeze()
             return critic

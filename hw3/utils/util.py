@@ -45,16 +45,17 @@ def show_grid(images):
     cv2.waitKey(1)
 
 
-def print_status(epoch, batch_idx, n_trained, n_data, loss_d, loss_g):
+def print_status(epoch, batch_idx, n_trained, n_data, loss_d, loss_g, mode='Train'):
     if batch_idx == 0:
         print('')
-    log_msg = '\rTrain Epoch: {} [{}/{} ({:.0f}%)] Loss: D:{:.6f}, G:{:.6f}'.format(
-        epoch, n_trained, n_data, 100.0 * n_trained / n_data, loss_d, loss_g)
+    log_msg = '\r{} Epoch: {} [{}/{} ({:.0f}%)] Loss: D:{:.6f}, G:{:.6f}'.format(
+        mode.title(), epoch, n_trained, n_data, 100.0 * n_trained / n_data, loss_d, loss_g)
     sys.stdout.write(log_msg)
     sys.stdout.flush()
     if batch_idx == n_data-1:
         print('')
-        
+
+
 class Embedder:
     def __init__(self, hair_attr, eyes_attr):
         self.hair_attr = hair_attr
@@ -79,5 +80,3 @@ class Embedder:
         hair_code = self.hair_dict[feature['hair'][0]]
         eyes_code = self.eyes_dict[feature['eyes'][0]]
         return np.concatenate((hair_code, eyes_code), axis=0)
-            
-        
