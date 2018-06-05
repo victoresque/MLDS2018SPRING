@@ -12,7 +12,7 @@
         "02": {
             "desc": "modified loss function",
             "note": "use [max log(D)] instead of [min log(1-D)]",
-            "enabled": true
+            "enabled": false
         },
         "03": {
             "desc": "gaussian input noise",
@@ -78,7 +78,7 @@
         "17": {
             "desc": "dropouts in G",
             "note": "the dropout rate is the same specified as in arXiv:1611.07004",
-            "enabled": false,
+            "enabled": true,
             "rate": 0.5
         }
     },
@@ -94,7 +94,7 @@
     },
     "model": {
         "noise_dim": 100,
-        "embed_dim": 256
+        "embed_dim": 20
     },
     "optimizers": {
         "generator": {
