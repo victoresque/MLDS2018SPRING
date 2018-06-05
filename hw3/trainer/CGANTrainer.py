@@ -48,6 +48,10 @@ class CGANTrainer(BaseTrainer):
         sum_loss_d, n_loss_d = 0, 0
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, (real_images, real_conditions) in enumerate(self.data_loader):
+            cond_scale = np.random.uniform(0.8, 1.0, (real_conditions.shape[0], 1))
+            cond_bias = np.array([np.random.uniform(0, 1-i[0]) for i in cond_scale]).reshape(cond_scale.shape)
+            real_conditions = real_conditions * cond_scale + cond_bias
+
             input_noise = torch.randn(self.batch_size, self.noise_dim, 1, 1)
             real_images = np.transpose(real_images, (0, 3, 1, 2))  # (batch, channel(BGR), width, height)
 

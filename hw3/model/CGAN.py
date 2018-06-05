@@ -91,7 +91,11 @@ class CGAN(BaseModel):
             self.embed_dim = config['model']['embed_dim']
 
             self.condition_embed = nn.Linear(22, self.embed_dim)
-            self.critic = nn.Linear(256+256, 1)
+            self.critic = nn.Sequential(
+                nn.Linear(512, 512),
+                nn.ReLU(inplace=True),
+                nn.Linear(512, 1)
+            )
 
             global relu_d, relu_d_config, batch_norm_d
             self.conv = nn.Sequential(
