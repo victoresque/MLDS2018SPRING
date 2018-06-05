@@ -78,7 +78,7 @@
         "17": {
             "desc": "dropouts in G",
             "note": "the dropout rate is the same specified as in arXiv:1611.07004",
-            "enabled": true,
+            "enabled": false,
             "rate": 0.5
         }
     },
@@ -94,7 +94,7 @@
     },
     "model": {
         "noise_dim": 100,
-        "embed_dim": 20
+        "embed_dim": 64
     },
     "optimizers": {
         "generator": {
