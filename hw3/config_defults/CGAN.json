@@ -12,7 +12,7 @@
         "02": {
             "desc": "modified loss function",
             "note": "use [max log(D)] instead of [min log(1-D)]",
-            "enabled": false
+            "enabled": true
         },
         "03": {
             "desc": "gaussian input noise",
@@ -33,8 +33,9 @@
             "note": "if enabled, use the specified non-linearity, otherwise ignore the configs",
             "enabled": true,
             "generator": {
-                "type": "ReLU",
+                "type": "LeakyReLU",
                 "config": {
+                    "negative_slope": 0.2,
                     "inplace": true
                 }
             },
@@ -59,7 +60,7 @@
         "13": {
             "desc": "noise to inputs to D with decay",
             "note": "if not enabled, configs are ignored",
-            "enabled": false,
+            "enabled": true,
             "config": {
                 "var": 0.02,
                 "decay": "lambda noise, epoch: noise * (0.95 ** epoch)"

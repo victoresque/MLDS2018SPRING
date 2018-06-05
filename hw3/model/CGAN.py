@@ -93,7 +93,7 @@ class CGAN(BaseModel):
             self.condition_embed = nn.Linear(22, self.embed_dim)
             self.critic = nn.Sequential(
                 nn.Linear(512, 512),
-                nn.ReLU(inplace=True),
+                nn.LeakyReLU(negative_slope=0.2, inplace=True),
                 nn.Linear(512, 1)
             )
 
