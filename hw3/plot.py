@@ -25,7 +25,7 @@ if __name__ == '__main__':
     iter_loss_d_avg = []
     iter_loss_g_avg = []
 
-    K = float(sys.argv[2]) if len(sys.argv) == 3 else 5
+    K = int(sys.argv[2]) if len(sys.argv) == 3 else 5
     for i in range(len(iter_loss_d)//K):
         s = 0
         for j in range(K):
