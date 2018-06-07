@@ -12,6 +12,23 @@ def ensure_dir(path):
         os.makedirs(path)
 
 
+def save_imgs(gen_imgs, path):
+    import matplotlib.pyplot as plt
+
+    assert gen_imgs.shape == (25, 64, 64, 3)
+
+    r, c = 5, 5
+    fig, axs = plt.subplots(r, c)
+    cnt = 0
+    for i in range(r):
+        for j in range(c):
+            axs[i,j].imshow(gen_imgs[cnt, :, :, :])
+            axs[i,j].axis('off')
+            cnt += 1
+    fig.savefig(path)
+    plt.close()
+
+
 def eval_metrics(metrics, output, target):
     acc_metrics = np.zeros(len(metrics))
     output = output.cpu().data.numpy()

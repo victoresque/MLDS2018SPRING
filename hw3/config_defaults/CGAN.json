@@ -1,5 +1,5 @@
 {
-    "name": "CGAN00001",
+    "name": "CGAN00001_NONOISE",
     "arch": "CGAN",
     "note": "",
     "cuda": true,
