@@ -26,8 +26,8 @@ def main(args):
     model.summary()
 
     gen_images = []
-    # torch.manual_seed(310565454)  # DCGAN seed
-    torch.manual_seed(1234)  # WGAN-GP seed
+    torch.manual_seed(3150505454)  # DCGAN seed
+    # torch.manual_seed(1234)  # WGAN-GP seed
     for i in range(25):
         input_noise = torch.randn(1, config['model']['noise_dim'], 1, 1)
         input_noise = to_variable(with_cuda, input_noise)
