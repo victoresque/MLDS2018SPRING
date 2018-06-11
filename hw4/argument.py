@@ -7,4 +7,10 @@ def add_arguments(parser):
         parser.add_argument('--batch_size', type=int, default=32, help='batch size for training')
         parser.add_argument('--learning_rate', type=float, default=0.01, help='learning rate for training')
     '''
+    parser.add_argument('--save-freq', type=int, default=1,
+                        help='saving frequency')
+    parser.add_argument('--lr', type=float, default=0.0005,
+                        help='learning rate for training')
+    parser.add_argument('--hidden-size', type=int, default=200,
+                        help='hidden size for the training model')
     return parser

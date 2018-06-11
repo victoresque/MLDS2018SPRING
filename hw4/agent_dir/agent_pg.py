@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from torch.optim import RMSprop
+from torch.optim import RMSprop, Adam
 
 
 def prepro(I):
@@ -37,9 +37,31 @@ def prepro(I):
     I = I[::2, ::2, 0]  # downsample by factor of 2
     I[I == 144] = 0  # erase background (background type 1)
     I[I == 109] = 0  # erase background (background type 2)
-    I[I != 0] = 255  # everything else (paddles, ball) just set to 1
+    I[I != 0] = 1  # everything else (paddles, ball) just set to 1
 
     return I.astype(np.float).ravel()
+
+
+class PG(nn.Module):
+    def __init__(self, hidden_size):
+        super(PG, self).__init__()
+        self.fc = nn.Sequential(
+            nn.Linear(80 * 80, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, 1),
+            nn.Sigmoid()
+        )
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_normal(m.weight)
+
+    def forward(self, observation):
+        action = self.fc(observation)
+        return action
+
+UP_ACTION = 2
+DOWN_ACTION = 3
+action_dict = {DOWN_ACTION: 0, UP_ACTION: 1}
 
 
 class Agent_PG(Agent):
@@ -50,7 +72,8 @@ class Agent_PG(Agent):
         """
 
         super(Agent_PG,self).__init__(env)
-
+        self.args = args
+        self.latest_reward = []
         self.__build_model()
         if args.test_pg:
             # you can load your model here
@@ -67,30 +90,10 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        #self.prev_observation = self.env.reset()
-        #self.prev_observation = prepro(self.prev_observation)
 
     def __build_model(self):
-
-        class PG(nn.Module):
-            def __init__(self):
-                super(PG, self).__init__()
-                self.fc = nn.Sequential(
-                    nn.Linear(80*80, 200),
-                    nn.ReLU(),
-                    nn.Linear(200, 1),
-                    nn.Sigmoid()
-                )
-                for m in self.modules():
-                    if isinstance(m, nn.Linear):
-                        nn.init.xavier_normal(m.weight)
-
-            def forward(self, observation):
-                action = self.fc(observation)
-                return action
-
-        self.model = PG()
-        self.optimizer = RMSprop(self.model.parameters(), lr=0.0001)
+        self.model = PG(self.args.hidden_size)
+        self.optimizer = Adam(self.model.parameters(), lr=self.args.lr)
 
     def train(self):
         """
@@ -99,62 +102,89 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        prev_observation = None
-        curr_observation = self.env.reset()
-        xs, ys, rs = [], [], []
-        running_reward = None
-        reward_sum = 0
-        episode_number = 0
 
-        self.model.train()
+        batch_state_action_reward_tuples = []
+        smoothed_reward = None
+        episode_n = 1
 
         while True:
-            curr_observation = prepro(curr_observation)
-            residual = curr_observation - prev_observation if prev_observation is not None \
-                                                                     else np.zeros(6400)
-            prev_observation = curr_observation
+            print("Starting episode %d" % episode_n)
 
-            # predict policy network
-            action, _, y = self.make_action(residual)
+            episode_done = False
+            episode_reward_sum = 0
 
-            xs.append(residual)
-            ys.append(y)
+            round_n = 1
 
-            curr_observation, reward, done, info = self.env.step(action)
-            reward_sum += reward
-            rs.append(reward)
+            last_observation = self.env.reset()
+            last_observation = prepro(last_observation)
+            action = self.env.action_space.sample()
+            observation, _, _, _ = self.env.step(action)
+            observation = prepro(observation)
+            n_steps = 1
 
-            if done:
-                episode_number += 1
-                print("[Episode {}]".format(episode_number), end=' ')
-                episode_residuals = np.vstack(xs)
-                episode_rewards = np.vstack(rs)
-                episode_y = np.vstack(ys)
-                xs, rs, ys = [], [], []
+            while not episode_done:
+                observation_delta = observation - last_observation
+                last_observation = observation
 
-                discounted_epr = self.discount_rewards(episode_rewards)
-                discounted_epr -= np.mean(discounted_epr)
-                discounted_epr /= np.std(discounted_epr)
+                action, up_probability = self.make_action(observation_delta)
 
-                episode_residuals = Variable(torch.FloatTensor(episode_residuals))
-                discounted_epr = Variable(torch.FloatTensor(discounted_epr))
-                episode_y = Variable(torch.FloatTensor(episode_y))
+                observation, reward, episode_done, info = self.env.step(action)
+                observation = prepro(observation)
+                episode_reward_sum += reward
+                n_steps += 1
 
-                self.optimizer.zero_grad()
+                tup = (observation_delta, action_dict[action], reward)
+                batch_state_action_reward_tuples.append(tup)
 
-                prob = self.model(episode_residuals)
-                loss = F.binary_cross_entropy(prob, episode_y, discounted_epr)
-                loss.backward()
-                self.optimizer.step()
+                #if reward == -1:
+                #    print("Round %d: %d time steps; lost..." % (round_n, n_steps))
+                #elif reward == +1:
+                #    print("Round %d: %d time steps; won!" % (round_n, n_steps))
+                if reward != 0:
+                    round_n += 1
+                    n_steps = 0
+            print("Episode %d finished after %d rounds" % (episode_n, round_n))
 
-                running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
-                print('Loss: {:.6f}. Episode total reward {}. Running mean: {:.6f}.'.format(loss,
-                                                                                            reward_sum,
-                                                                                            running_reward))
+            # save latest 30 rewards
+            self.latest_reward.append(episode_reward_sum)
+            self.latest_reward = self.latest_reward[-30:]
 
-                reward_sum = 0
-                curr_observation = self.env.reset()
-                prev_observation = None
+            if smoothed_reward is None:
+                smoothed_reward = episode_reward_sum
+            else:
+                smoothed_reward = smoothed_reward * 0.99 + episode_reward_sum * 0.01
+            print("Total reward: {:.0f}; Smoothed average reward {:.4f}".format(episode_reward_sum, smoothed_reward))
+
+            states, actions, rewards = zip(*batch_state_action_reward_tuples)
+            rewards = self.discount_rewards(rewards)
+            rewards -= np.mean(rewards)
+            rewards /= np.std(rewards)
+
+            self.model.train()
+
+            states = Variable(torch.FloatTensor(states))
+            actions = Variable(torch.FloatTensor(actions))
+            rewards = Variable(torch.FloatTensor(rewards))
+
+
+            self.optimizer.zero_grad()
+            pred = self.model(states)
+            loss = F.binary_cross_entropy(pred.squeeze(), actions, weight=rewards)
+            loss.backward()
+            self.optimizer.step()
+
+            batch_state_action_reward_tuples = []
+
+            episode_n += 1
+            if episode_n % self.args.save_freq == 0:
+                log = {
+                    'episode': episode_n,
+                    'state_dict': self.model.state_dict(),
+                    'loss': loss,
+                    'latest_reward': self.latest_reward
+                }
+                torch.save(log, 'checkpoints/checkpoint_episode{}.pth.tar'.format(episode_n))
+
 
     def make_action(self, observation, test=True):
         """
@@ -171,19 +201,19 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
+        self.model.eval()
         observation = Variable(torch.FloatTensor(observation))
-        probability = self.model(observation.unsqueeze(0)).data.cpu().numpy()[0]
-        action = 2 if np.random.uniform() < probability else 3
-        y = 1 if action == 2 else 0
+        up_probability = self.model(observation).data.cpu().numpy()[0]
+        action = UP_ACTION if np.random.uniform() < up_probability else DOWN_ACTION
 
-        return action, probability, y
+        return action, up_probability
 
     def discount_rewards(self, r):
         """ take 1D float array of rewards and compute discounted reward """
         gamma = 0.99
         discounted_r = np.zeros_like(r)
         running_add = 0
-        for t in reversed(range(0, r.size)):
+        for t in reversed(range(0, len(r))):
             if r[t] != 0: running_add = 0  # reset the sum, since this was a game boundary (pong specific!)
             running_add = running_add * gamma + r[t]
             discounted_r[t] = running_add

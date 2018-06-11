@@ -61,7 +61,7 @@ class Environment(object):
         '''
         if not self.env.action_space.contains(action):
             raise ValueError('Ivalid action!!')
-        self.env.render()
+        # self.env.render()
         observation, reward, done, info = self.env.step(action)
 
         return np.array(observation), reward, done, info
