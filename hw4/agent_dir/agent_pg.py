@@ -1,5 +1,5 @@
 from agent_dir.agent import Agent
-from scipy.misc import imresize, imsave
+from scipy.misc import imresize
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from torch.optim import RMSprop, Adam
 
 
-def prepro(I):
+def prepro(observation):
     # method 1
     """
     Call this function to preprocess RGB image to grayscale image if necessary
@@ -33,11 +33,11 @@ def prepro(I):
     """ 
         prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector 
     """
-    I = I[35:195]  # crop
-    I = I[::2, ::2, 0]  # downsample by factor of 2
-    I[I == 144] = 0  # erase background (background type 1)
-    I[I == 109] = 0  # erase background (background type 2)
-    I[I != 0] = 1  # everything else (paddles, ball) just set to 1
+    observation = observation[35:195]  # crop
+    observation = observation[::2, ::2, 0]  # downsample by factor of 2
+    observation[observation == 144] = 0  # erase background (background type 1)
+    observation[observation == 109] = 0  # erase background (background type 2)
+    observation[observation != 0] = 1  # everything else (paddles, ball) just set to 1
 
     return I.astype(np.float).ravel()
 
@@ -59,6 +59,7 @@ class PG(nn.Module):
         action = self.fc(observation)
         return action
 
+
 UP_ACTION = 2
 DOWN_ACTION = 3
 action_dict = {DOWN_ACTION: 0, UP_ACTION: 1}
@@ -70,15 +71,13 @@ class Agent_PG(Agent):
         Initialize every things you need here.
         For example: building your model
         """
-
-        super(Agent_PG,self).__init__(env)
+        super(Agent_PG, self).__init__(env)
         self.args = args
         self.latest_reward = []
         self.__build_model()
         if args.test_pg:
             # you can load your model here
             print('loading trained model')
-
 
     def init_game_setting(self):
         """
@@ -103,12 +102,13 @@ class Agent_PG(Agent):
         # YOUR CODE HERE #
         ##################
 
-        batch_state_action_reward_tuples = []
+        batch_state_action_reward = []
         smoothed_reward = None
         episode_n = 1
 
         while True:
-            print("Starting episode %d" % episode_n)
+            print('---------------------------------------------------------------')
+            print("Starting episode {}".format(episode_n))
 
             episode_done = False
             episode_reward_sum = 0
@@ -134,28 +134,23 @@ class Agent_PG(Agent):
                 n_steps += 1
 
                 tup = (observation_delta, action_dict[action], reward)
-                batch_state_action_reward_tuples.append(tup)
+                batch_state_action_reward.append(tup)
 
-                #if reward == -1:
-                #    print("Round %d: %d time steps; lost..." % (round_n, n_steps))
-                #elif reward == +1:
-                #    print("Round %d: %d time steps; won!" % (round_n, n_steps))
                 if reward != 0:
                     round_n += 1
                     n_steps = 0
-            print("Episode %d finished after %d rounds" % (episode_n, round_n))
+            print("Episode {} finished after {} rounds".format(episode_n, round_n))
 
-            # save latest 30 rewards
+            # save latest rewards
             self.latest_reward.append(episode_reward_sum)
-            self.latest_reward = self.latest_reward[-30:]
 
             if smoothed_reward is None:
                 smoothed_reward = episode_reward_sum
             else:
                 smoothed_reward = smoothed_reward * 0.99 + episode_reward_sum * 0.01
             print("Total reward: {:.0f}; Smoothed average reward {:.4f}".format(episode_reward_sum, smoothed_reward))
-
-            states, actions, rewards = zip(*batch_state_action_reward_tuples)
+            print('---------------------------------------------------------------')
+            states, actions, rewards = zip(*batch_state_action_reward)
             rewards = self.discount_rewards(rewards)
             rewards -= np.mean(rewards)
             rewards /= np.std(rewards)
@@ -166,14 +161,13 @@ class Agent_PG(Agent):
             actions = Variable(torch.FloatTensor(actions))
             rewards = Variable(torch.FloatTensor(rewards))
 
-
             self.optimizer.zero_grad()
             pred = self.model(states)
             loss = F.binary_cross_entropy(pred.squeeze(), actions, weight=rewards)
             loss.backward()
             self.optimizer.step()
 
-            batch_state_action_reward_tuples = []
+            batch_state_action_reward = []
 
             episode_n += 1
             if episode_n % self.args.save_freq == 0:
@@ -184,7 +178,6 @@ class Agent_PG(Agent):
                     'latest_reward': self.latest_reward
                 }
                 torch.save(log, 'checkpoints/checkpoint_episode{}.pth.tar'.format(episode_n))
-
 
     def make_action(self, observation, test=True):
         """
@@ -209,13 +202,12 @@ class Agent_PG(Agent):
         return action, up_probability
 
     def discount_rewards(self, r):
-        """ take 1D float array of rewards and compute discounted reward """
-        gamma = 0.99
         discounted_r = np.zeros_like(r)
         running_add = 0
         for t in reversed(range(0, len(r))):
-            if r[t] != 0: running_add = 0  # reset the sum, since this was a game boundary (pong specific!)
-            running_add = running_add * gamma + r[t]
+            if r[t] != 0:
+                running_add = 0
+            running_add = running_add * self.args.gamma + r[t]
             discounted_r[t] = running_add
         return discounted_r
 
@@ -229,6 +221,14 @@ if __name__ == '__main__':
     parser.add_argument('--train_dqn', action='store_true', help='whether train DQN')
     parser.add_argument('--test_pg', action='store_true', help='whether test policy gradient')
     parser.add_argument('--test_dqn', action='store_true', help='whether test DQN')
+    parser.add_argument('--save-freq', type=int, default=1,
+                        help='saving frequency')
+    parser.add_argument('--lr', type=float, default=0.0005,
+                        help='learning rate for training')
+    parser.add_argument('--hidden-size', type=int, default=200,
+                        help='hidden size for the training model')
+    parser.add_argument('--gamma', type=float, default=0.99,
+                        help='discount factor for reward in training')
     args = parser.parse_args()
     env_name = args.env_name or 'Pong-v0'
     env = Environment(env_name, args)
