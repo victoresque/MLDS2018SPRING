@@ -39,7 +39,7 @@ def prepro(observation):
     observation[observation == 109] = 0  # erase background (background type 2)
     observation[observation != 0] = 1  # everything else (paddles, ball) just set to 1
 
-    return I.astype(np.float).ravel()
+    return observation.astype(np.float).ravel()
 
 
 class PG(nn.Module):
@@ -86,9 +86,7 @@ class Agent_PG(Agent):
         Put anything you want to initialize if necessary
 
         """
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        pass
 
     def __build_model(self):
         self.model = PG(self.args.hidden_size)
@@ -120,7 +118,6 @@ class Agent_PG(Agent):
             action = self.env.action_space.sample()
             observation, _, _, _ = self.env.step(action)
             observation = prepro(observation)
-            n_steps = 1
 
             while not episode_done:
                 observation_delta = observation - last_observation
@@ -131,14 +128,13 @@ class Agent_PG(Agent):
                 observation, reward, episode_done, info = self.env.step(action)
                 observation = prepro(observation)
                 episode_reward_sum += reward
-                n_steps += 1
 
                 tup = (observation_delta, action_dict[action], reward)
                 batch_state_action_reward.append(tup)
 
                 if reward != 0:
                     round_n += 1
-                    n_steps = 0
+
             print("Episode {} finished after {} rounds".format(episode_n, round_n))
 
             # save latest rewards
@@ -149,6 +145,7 @@ class Agent_PG(Agent):
             else:
                 smoothed_reward = smoothed_reward * 0.99 + episode_reward_sum * 0.01
             print("Total reward: {:.0f}; Smoothed average reward {:.4f}".format(episode_reward_sum, smoothed_reward))
+            print("Latest 30 episodes average reward: {}".format(sum(self.latest_reward[-30:])/30))
             print('---------------------------------------------------------------')
             states, actions, rewards = zip(*batch_state_action_reward)
             rewards = self.discount_rewards(rewards)
