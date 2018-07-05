@@ -22,13 +22,15 @@ def add_arguments(parser):
     """
         For HW4-2 DQN
     """
+    parser.add_argument('--arch', type=str, default='dqn',
+                        help='folder name to save checkpoints')
     parser.add_argument('--mem-cap', type=int, default=10000,
                         help='capacity for replay memory')
     parser.add_argument('--batch-size', type=int, default=32,
                         help='batch size for updating model')
-    parser.add_argument('--num-episodes', type=int, default=100,
+    parser.add_argument('--num-episodes', type=int, default=3000000,
                        help='number of episodes for playing game')
-    parser.add_argument('--target-update', type=int, default=5,
+    parser.add_argument('--target-update', type=int, default=1000,
                        help='number of episodes to update target')
     
     return parser

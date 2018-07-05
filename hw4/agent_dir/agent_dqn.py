@@ -21,6 +21,9 @@ LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
 ByteTensor = torch.cuda.ByteTensor if use_cuda else torch.ByteTensor
 Tensor = FloatTensor
 
+def ensure_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
@@ -30,14 +33,14 @@ class ReplayMemory(object):
     def __init__(self, capacity):
         self.capacity = capacity
         self.memory = []
+        self.position = 0
 
     def push(self, *args):
         """Saves a transition."""
         if len(self.memory) < self.capacity:
-            self.memory.append(Transition(*args))
-        else:
-            del self.memory[0]
-            self.memory.append(Transition(*args))
+            self.memory.append(None)
+        self.memory[self.position] = Transition(*args)
+        self.position = (self.position + 1) % self.capacity
 
     def sample(self, batch_size):
         return random.sample(self.memory, batch_size)
@@ -52,8 +55,12 @@ class DQN(nn.Module):
         self.duel_net = duel_net
 
         self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
+        self.bn1 = nn.BatchNorm2d(32)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.bn2 = nn.BatchNorm2d(64)
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        self.bn3 = nn.BatchNorm2d(64)
+        
         self.fc4 = nn.Linear(7 * 7 * 64, 512)
         self.fc5 = nn.Linear(512, num_actions)
         if(self.duel_net):
@@ -61,9 +68,9 @@ class DQN(nn.Module):
             self.fc_advantage = nn.Linear(512, num_actions)
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
         x = F.leaky_relu(self.fc4(x.view(x.size(0), -1)))
         if(self.duel_net):
             value = self.fc_value(x)
@@ -92,15 +99,15 @@ class Agent_DQN(Agent):
         # YOUR CODE HERE #
         ##################
         self.args = args
-
+        self.arch = args.arch
         self.BATCH_SIZE = args.batch_size
+        self.memory_size = args.mem_cap        
         self.GAMMA = 0.99
         self.EPS_START = 1.0
-        self.EPS_END = 0.05
+        self.EPS_END = 0.025
         self.EPS_DECAY = 1000000
-        self.memory_size = 10000
         self.num_actions = 4
-        self.lr = 0.00025
+        self.lr = 0.00015
         self.load_model = False
         # for bonus setting
         self.double_q = False
@@ -121,6 +128,9 @@ class Agent_DQN(Agent):
         self.loss_func = nn.MSELoss()
         self.steps_done = 0
         self.latest_reward = []
+
+        self.save_path = os.path.join('checkpoints', self.arch)
+        ensure_dir(self.save_path)
 
         if args.test_dqn:
             #you can load your model here
@@ -147,14 +157,16 @@ class Agent_DQN(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        last30_reward = np.zeros(30)
         for episode_n in range(1, self.args.num_episodes+1):
 
             # Initialize the environment and state
+            
             last_observation = self.init_game_setting()
             action = LongTensor([[self.env.get_random_action()]])
             observation, _, _, _ = self.env.step(action[0, 0])
-            state = observation - last_observation
+            state = (observation - last_observation)
+
+            #state = self.init_game_setting()
             state = self.Observ2Tensor(np.transpose(state, (2, 0, 1)))
 
             episode_reward_sum = 0
@@ -162,10 +174,13 @@ class Agent_DQN(Agent):
             for t in count():
                 
                 # Select and perform an action
-                action = self.select_action(state)
+                action = self.make_action(state)
+                
                 last_observation = observation
                 observation, reward, episode_done, _ = self.env.step(action[0, 0])
-                state_next = observation - last_observation
+                state_next = (observation - last_observation)
+                
+                #state_next, reward, episode_done, _ = self.env.step(action[0, 0])
                 state_next = self.Observ2Tensor(np.transpose(state_next, (2, 0, 1)))
                 episode_reward_sum += reward
 
@@ -176,7 +191,7 @@ class Agent_DQN(Agent):
 
                 # Store the transition in memory
 
-                self.memory.push(state, action, state_next, reward.clamp(0, 1))
+                self.memory.push(state, action, state_next, reward.clamp(-1, 1))
 
                 # swap observation
                 state = state_next
@@ -184,6 +199,10 @@ class Agent_DQN(Agent):
 
                 # Perform one step of the optimization (on the target network)
                 loss = self.optimize_model()
+
+                # Update the target network
+                if self.steps_done % self.args.target_update == 0:
+                    self.target_Q_model.load_state_dict(self.Q_model.state_dict())
 
                 if episode_done:
                     break
@@ -198,9 +217,6 @@ class Agent_DQN(Agent):
             print("Latest 30 episodes average reward: {}".format(sum(self.latest_reward[-30:])/30))
             print('---------------------------------------------------------------')
 
-            # Update the target network
-            if episode_n % self.args.target_update == 0:
-                self.target_Q_model.load_state_dict(self.Q_model.state_dict())
 
             if episode_n % self.args.save_freq == 0:
                 log = {
@@ -209,14 +225,14 @@ class Agent_DQN(Agent):
                     'loss': loss,
                     'latest_reward': self.latest_reward
                 }
-                torch.save(log, 'checkpoints/dqn/checkpoint_episode{}.pth.tar'.format(episode_n))
+                torch.save(log, os.path.join(self.save_path, 'checkpoint_episode{}.pth.tar'.format(episode_n)))
 
-    def make_action(self, observation, test=True):
+    def make_action(self, state, test=True):
         """
         Return predicted action of your agent
         Input:
-            observation: np.array
-                stack 4 last preprocessed frames, shape: (84, 84, 4)
+            state: Tensor
+                stack 4 last preprocessed frames, shape: (1, 84, 84, 4)
         Return:
             action: int
                 the predicted action from trained model
@@ -224,14 +240,6 @@ class Agent_DQN(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        state = self.Observ2Tensor(np.transpose(observation, (2, 0, 1)))
-        action = self.select_action(state, test=True)
-        return action[0, 0]
-
-    def Observ2Tensor(self, observation):
-        return torch.from_numpy(observation).unsqueeze(0).type(Tensor)
-
-    def select_action(self, state, test=False):
         sample = random.random()
         # eps_threshold = self.EPS_END + (self.EPS_START - self.EPS_END) * \
         #     math.exp(-1. * self.steps_done / self.EPS_DECAY)
@@ -241,15 +249,20 @@ class Agent_DQN(Agent):
         if(test): eps_threshold = 0.001
 
         if sample > eps_threshold:
+            self.Q_model.eval()
             return self.Q_model(
                 Variable(state, volatile=True).type(FloatTensor)).data.max(1)[1].view(1, 1)
         else:
             return LongTensor([[self.env.get_random_action()]])
 
+    def Observ2Tensor(self, observation):
+        return torch.from_numpy(observation).unsqueeze(0).type(Tensor)
+
+
     def optimize_model(self):
         if len(self.memory) < self.BATCH_SIZE:
             return
-
+        self.Q_model.train()
         transitions = self.memory.sample(self.BATCH_SIZE)
         # Transpose the batch (see http://stackoverflow.com/a/19343/3343043 for
         # detailed explanation).
@@ -298,7 +311,7 @@ class Agent_DQN(Agent):
         self.optimizer.zero_grad()
         loss.backward()
         # ===== for test =====
-        # for param in self.Q_model.parameters():
-        #     param.grad.data.clamp_(-1, 1)
+        #for param in self.Q_model.parameters():
+        #    param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
         return loss
