@@ -23,7 +23,5 @@ def add_arguments(parser):
     """
     parser.add_argument('--duel', action='store_true',
                         help='implement duel dqn')
-    parser.add_argument('--dqn_checkpoint', type=str, default='checkpoint_episode17000.pth.tar',
-                        help='dqn model checkpoint')
 
     return parser
