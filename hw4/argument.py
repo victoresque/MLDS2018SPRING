@@ -32,5 +32,7 @@ def add_arguments(parser):
                        help='number of episodes for playing game')
     parser.add_argument('--target-update', type=int, default=1000,
                        help='number of episodes to update target')
+    parser.add_argument('--model-path', type=str,
+                        help='model path for testing')
     
     return parser

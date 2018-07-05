@@ -1,4 +1,5 @@
 from agent_dir.agent import Agent
+from environment import Environment
 
 import os
 import math
@@ -90,7 +91,7 @@ class Agent_DQN(Agent):
 
         super(Agent_DQN,self).__init__(env)
 
-        self.env = env
+        self.valid_env = Environment('BreakoutNoFrameskip-v4', args, atari_wrapper=True, test=True)
         # Atari Actions: 0 (noop), 1 (fire), 2 (left) and 3 (right) are valid actions
         self.VALID_ACTIONS = [0, 1, 2, 3]
         
@@ -128,6 +129,7 @@ class Agent_DQN(Agent):
         self.loss_func = nn.MSELoss()
         self.steps_done = 0
         self.latest_reward = []
+        self.valid_per_episode = 100
 
         self.save_path = os.path.join('checkpoints', self.arch)
         ensure_dir(self.save_path)
@@ -135,8 +137,8 @@ class Agent_DQN(Agent):
         if args.test_dqn:
             #you can load your model here
             print('loading trained model')
-
-
+            state_dict = torch.load(args.model_path)['state_dict']
+            self.Q_model.load_state_dict(state_dict)
 
     def init_game_setting(self):
         """
@@ -146,6 +148,7 @@ class Agent_DQN(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
+        self.env.seed(11037)
         observation = self.env.reset()
         return observation
 
@@ -160,14 +163,8 @@ class Agent_DQN(Agent):
         for episode_n in range(1, self.args.num_episodes+1):
 
             # Initialize the environment and state
-            
-            last_observation = self.init_game_setting()
-            action = LongTensor([[self.env.get_random_action()]])
-            observation, _, _, _ = self.env.step(action[0, 0])
-            state = (observation - last_observation)
-
-            #state = self.init_game_setting()
-            state = self.Observ2Tensor(np.transpose(state, (2, 0, 1)))
+            observation = self.env.reset()
+            state = self.Observ2Tensor(np.transpose(observation, (2, 0, 1)))
 
             episode_reward_sum = 0
             epi_step = 0
@@ -175,13 +172,9 @@ class Agent_DQN(Agent):
                 
                 # Select and perform an action
                 action = self.select_action(state)
-                
-                last_observation = observation
                 observation, reward, episode_done, _ = self.env.step(action[0, 0])
-                state_next = (observation - last_observation)
                 
-                #state_next, reward, episode_done, _ = self.env.step(action[0, 0])
-                state_next = self.Observ2Tensor(np.transpose(state_next, (2, 0, 1)))
+                state_next = self.Observ2Tensor(np.transpose(observation, (2, 0, 1)))
                 episode_reward_sum += reward
 
                 if episode_done:
@@ -195,7 +188,6 @@ class Agent_DQN(Agent):
 
                 # swap observation
                 state = state_next
-                #observation = last_observation
 
                 # Perform one step of the optimization (on the target network)
                 loss = self.optimize_model()
@@ -215,6 +207,7 @@ class Agent_DQN(Agent):
 
             print("Total reward: {:.0f}".format(episode_reward_sum))
             print("Latest 30 episodes average reward: {}".format(sum(self.latest_reward[-30:])/30))
+            if episode_n % self.valid_per_episode == 0: self.valid()
             print('---------------------------------------------------------------')
 
 
@@ -226,6 +219,19 @@ class Agent_DQN(Agent):
                     'latest_reward': self.latest_reward
                 }
                 torch.save(log, os.path.join(self.save_path, 'checkpoint_episode{}.pth.tar'.format(episode_n)))
+
+    def valid(self):
+        print("Testing ... ")
+        observation = self.valid_env.reset()
+        done = False
+        episode_reward = 0
+        rewards = []
+        while not done:
+            action = self.make_action(observation, test=True)
+            observation, reward, done, info = self.valid_env.step(action)
+            rewards.append(reward)
+        print("Tatal Reward: {}, AVG Reward: {:.2f}, Num Rounds: {}".format(
+                        np.sum(rewards), np.mean(rewards), len(rewards)))
 
     def make_action(self, observation, test=True):
         """
