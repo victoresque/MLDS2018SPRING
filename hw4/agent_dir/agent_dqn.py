@@ -1,78 +1,50 @@
 from agent_dir.agent import Agent
-
-import os
-import math
-import random
-import numpy as np
-from collections import namedtuple
-from itertools import count
-
+from collections import deque
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
-import torchvision.transforms as T
+import numpy as np
+import random
+import os
+import sys
 
-# if gpu is to be used
-use_cuda = torch.cuda.is_available()
-FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
-LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
-ByteTensor = torch.cuda.ByteTensor if use_cuda else torch.ByteTensor
-Tensor = FloatTensor
-
-
-Transition = namedtuple('Transition',
-                        ('state', 'action', 'next_state', 'reward'))
-
-
-class ReplayMemory(object):
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.memory = []
-
-    def push(self, *args):
-        """Saves a transition."""
-        if len(self.memory) < self.capacity:
-            self.memory.append(Transition(*args))
-        else:
-            del self.memory[0]
-            self.memory.append(Transition(*args))
-
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
-
-    def __len__(self):
-        return len(self.memory)
 
 class DQN(nn.Module):
 
-    def __init__(self, in_channels=4, num_actions=4, duel_net=False):
+    def __init__(self, in_channels=4, num_actions=3, duel_net=False):
         super(DQN, self).__init__()
         self.duel_net = duel_net
 
         self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
-        self.fc4 = nn.Linear(7 * 7 * 64, 512)
+        self.fc4 = nn.Linear(7*7*64, 512)
         self.fc5 = nn.Linear(512, num_actions)
-        if(self.duel_net):
+        if self.duel_net:
+            print("Using Dueling Network......")
             self.fc_value = nn.Linear(512, 1)
             self.fc_advantage = nn.Linear(512, num_actions)
 
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.xavier_normal(m.weight)
+            elif isinstance(m, nn.Linear):
+                nn.init.xavier_normal(m.weight)
+
     def forward(self, x):
-        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv1(x.permute(0, 3, 1, 2)))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
-        x = F.leaky_relu(self.fc4(x.view(x.size(0), -1)))
-        if(self.duel_net):
+        x = F.relu(self.fc4(x.view(x.size(0), -1)))
+        if self.duel_net:
             value = self.fc_value(x)
             advantange = self.fc_advantage(x)
             q = value.expand_as(advantange) + (advantange - advantange.mean(1, keepdim=True).expand_as(advantange))
             return q
-
         else:
             return self.fc5(x)
+
 
 class Agent_DQN(Agent):
     def __init__(self, env, args):
@@ -81,52 +53,42 @@ class Agent_DQN(Agent):
         For example: building your model
         """
 
-        super(Agent_DQN,self).__init__(env)
-
-        self.env = env
-        # Atari Actions: 0 (noop), 1 (fire), 2 (left) and 3 (right) are valid actions
-        self.VALID_ACTIONS = [0, 1, 2, 3]
-        
-
         ##################
         # YOUR CODE HERE #
         ##################
+
+        super(Agent_DQN, self).__init__(env)
+
         self.args = args
+        self.batch_size = 32
+        self.gamma = 0.99
+        self.episode = 1000000
+        self.eps_min = 0.025
+        self.eps_max = 1.0
+        self.eps_step = 1000000
+        self.memory = deque(maxlen=10000)
+        self.target_Q = DQN(duel_net=args.duel).cuda()
+        self.current_Q = DQN(duel_net=args.duel).cuda()
+        self.target_Q.load_state_dict(self.current_Q.state_dict())
+        self.optimizer = torch.optim.RMSprop(self.current_Q.parameters(), lr=0.00015)
 
-        self.BATCH_SIZE = args.batch_size
-        self.GAMMA = 0.99
-        self.EPS_START = 1.0
-        self.EPS_END = 0.05
-        self.EPS_DECAY = 1000000
-        self.memory_size = 10000
-        self.num_actions = 4
-        self.lr = 0.00025
-        self.load_model = False
-        # for bonus setting
-        self.double_q = False
-        self.duel_net = False
-        self.epsilons = np.linspace(self.EPS_START, self.EPS_END, num=self.EPS_DECAY)
+        self.reward_list = []
+        print("============ Breakout ============")
+        print(self.env.env.unwrapped.get_action_meanings())
+        print("==================================")
 
-        self.Q_model = DQN(
-            num_actions=self.num_actions, duel_net=self.duel_net)
-        self.target_Q_model = DQN(
-            num_actions=self.num_actions, duel_net=self.duel_net)
-
-        if use_cuda:
-            self.Q_model.cuda()
-            self.target_Q_model.cuda()
-
-        self.optimizer = optim.RMSprop(self.Q_model.parameters(), lr = self.lr)
-        self.memory = ReplayMemory(self.memory_size)
-        self.loss_func = nn.MSELoss()
-        self.steps_done = 0
-        self.latest_reward = []
+        if args.duel:
+            if not os.path.exists('checkpoints/dqn_duel'):
+                os.makedirs('checkpoints/dqn_duel')
+        else:
+            if not os.path.exists('checkpoints/dqn'):
+                os.makedirs('checkpoints/dqn')
 
         if args.test_dqn:
-            #you can load your model here
+            # you can load your model here
             print('loading trained model')
-
-
+            checkpoint = torch.load('4-2.pth.tar', map_location=lambda storage, loc: storage)
+            self.current_Q.load_state_dict(checkpoint['state_dict'])
 
     def init_game_setting(self):
         """
@@ -136,9 +98,35 @@ class Agent_DQN(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        observation = self.env.reset()
-        return observation
+        pass
 
+    def epsilon(self, step):
+        if step > self.eps_step:
+            return 0
+        else:
+            return self.eps_min + (self.eps_max - self.eps_min) * ((self.eps_step - step) / self.eps_step)
+
+    def update_param(self):
+        if len(self.memory) < self.batch_size:
+            return 0
+
+        batch = random.sample(self.memory, self.batch_size)
+        batch_state, batch_next, batch_action, batch_reward, batch_done = zip(*batch)
+
+        batch_state = Variable(torch.stack(batch_state)).cuda().squeeze()
+        batch_next = Variable(torch.stack(batch_next)).cuda().squeeze()
+        batch_action = Variable(torch.stack(batch_action)).cuda()
+        batch_reward = Variable(torch.stack(batch_reward)).cuda()
+        batch_done = Variable(torch.stack(batch_done)).cuda()
+
+        current_q = self.current_Q(batch_state).gather(1, batch_action)
+        next_q = batch_reward + (1 - batch_done) * self.gamma * self.target_Q(batch_next).detach().max(-1)[0].unsqueeze(-1)
+
+        self.optimizer.zero_grad()
+        loss = F.mse_loss(current_q, next_q)
+        loss.backward()
+        self.optimizer.step()
+        return loss.data[0]
 
     def train(self):
         """
@@ -147,69 +135,65 @@ class Agent_DQN(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        last30_reward = np.zeros(30)
-        for episode_n in range(1, self.args.num_episodes+1):
 
-            # Initialize the environment and state
-            last_observation = self.init_game_setting()
-            action = LongTensor([[self.env.get_random_action()]])
-            observation, _, _, _ = self.env.step(action[0, 0])
-            state = observation - last_observation
-            state = self.Observ2Tensor(np.transpose(state, (2, 0, 1)))
+        step = 0
+        loss = []
 
-            episode_reward_sum = 0
-            epi_step = 0
-            for t in count():
-                
-                # Select and perform an action
-                action = self.select_action(state)
-                last_observation = observation
-                observation, reward, episode_done, _ = self.env.step(action[0, 0])
-                state_next = observation - last_observation
-                state_next = self.Observ2Tensor(np.transpose(state_next, (2, 0, 1)))
-                episode_reward_sum += reward
+        for episode in range(1, self.episode + 1):
+            state = self.env.reset()
+            state = state.astype(np.float64)
+            done = False
+            reward_sum = 0
 
-                if episode_done:
-                    state_next = None
+            while not done:
+                epsilon = self.epsilon(step)
+                action = random.randint(0, 2) if random.random() < epsilon else self.make_action(state, False)
+                next_state, reward, done, _ = self.env.step(action + 1)
+                next_state = next_state.astype(np.float64)
+                reward_sum += reward
+                step += 1
 
-                reward = Tensor([reward])
+                self.memory.append((
+                    torch.FloatTensor([state]),
+                    torch.FloatTensor([next_state]),
+                    torch.LongTensor([action]),
+                    torch.FloatTensor([reward]),
+                    torch.FloatTensor([done])
+                ))
 
-                # Store the transition in memory
+                state = next_state
 
-                self.memory.push(state, action, state_next, reward.clamp(0, 1))
+                if step % 4 == 0:
+                    loss.append(self.update_param())
+                if step % 1000 == 0:
+                    self.target_Q.load_state_dict(self.current_Q.state_dict())
 
-                # swap observation
-                state = state_next
-                #observation = last_observation
+            print("Episode: {} | Step: {} | Reward: {}".format(episode, step, reward_sum), end='\r')
+            sys.stdout.write('\033[K')
 
-                # Perform one step of the optimization (on the target network)
-                loss = self.optimize_model()
+            self.reward_list.append(reward_sum)
 
-                if episode_done:
-                    break
-                epi_step += 1
-            
-            print("Episode {} finished after {} rounds".format(episode_n, epi_step))
+            if episode % 100 == 0:
+                print("---------------------------------------------")
+                if step < self.eps_step:
+                    print("** Exploring phase **")
+                print("Episode:", episode)
+                print("Latest 30 episode average reward: {:.4f}".format(sum(self.reward_list[-30:])/30))
+                if self.epsilon(step):
+                    print("Epsilon max:", self.eps_max, "min:", self.eps_min)
+                    print("Current epsilon: {:.4f}".format(self.epsilon(step)))
 
-            # save latest rewards
-            self.latest_reward.append(episode_reward_sum)
-
-            print("Total reward: {:.0f}".format(episode_reward_sum))
-            print("Latest 30 episodes average reward: {}".format(sum(self.latest_reward[-30:])/30))
-            print('---------------------------------------------------------------')
-
-            # Update the target network
-            if episode_n % self.args.target_update == 0:
-                self.target_Q_model.load_state_dict(self.Q_model.state_dict())
-
-            if episode_n % self.args.save_freq == 0:
+            if episode % self.args.save_freq == 0:
                 log = {
-                    'episode': episode_n,
-                    'state_dict': self.Q_model.state_dict(),
+                    'episode': episode,
+                    'state_dict': self.current_Q.state_dict(),
                     'loss': loss,
-                    'latest_reward': self.latest_reward
+                    'latest_reward': self.reward_list
                 }
-                torch.save(log, 'checkpoints/dqn/checkpoint_episode{}.pth.tar'.format(episode_n))
+                if self.args.duel:
+                    torch.save(log, 'checkpoints/dqn_duel/checkpoint_episode{}.pth.tar'.format(episode))
+                else:
+                    torch.save(log, 'checkpoints/dqn/checkpoint_episode{}.pth.tar'.format(episode))
 
     def make_action(self, observation, test=True):
         """
@@ -224,81 +208,7 @@ class Agent_DQN(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        state = self.Observ2Tensor(np.transpose(observation, (2, 0, 1)))
-        action = self.select_action(state, test=True)
-        return action[0, 0]
 
-    def Observ2Tensor(self, observation):
-        return torch.from_numpy(observation).unsqueeze(0).type(Tensor)
-
-    def select_action(self, state, test=False):
-        sample = random.random()
-        # eps_threshold = self.EPS_END + (self.EPS_START - self.EPS_END) * \
-        #     math.exp(-1. * self.steps_done / self.EPS_DECAY)
-        eps_threshold = self.epsilons[min(self.steps_done, self.EPS_DECAY-1)]
-        
-        self.steps_done += 1
-        if(test): eps_threshold = 0.001
-
-        if sample > eps_threshold:
-            return self.Q_model(
-                Variable(state, volatile=True).type(FloatTensor)).data.max(1)[1].view(1, 1)
-        else:
-            return LongTensor([[self.env.get_random_action()]])
-
-    def optimize_model(self):
-        if len(self.memory) < self.BATCH_SIZE:
-            return
-
-        transitions = self.memory.sample(self.BATCH_SIZE)
-        # Transpose the batch (see http://stackoverflow.com/a/19343/3343043 for
-        # detailed explanation).
-        batch = Transition(*zip(*transitions))
-        
-        # Compute a mask of non-final states and concatenate the batch elements
-        non_final_mask = ByteTensor(tuple(map(lambda s: s is not None,
-                                              batch.next_state)))
-
-        # We don't want to backprop through the expected action values and volatile
-        # will save us on temporarily changing the model parameters'
-        # requires_grad to False!
-        non_final_next_states = Variable(torch.cat([s for s in batch.next_state
-                                                    if s is not None]),
-                                         volatile=True)
-        state_batch = Variable(torch.cat(batch.state))
-        action_batch = Variable(torch.cat(batch.action))
-        reward_batch = Variable(torch.cat(batch.reward))
-
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
-        # columns of actions taken
-        state_action_values = self.Q_model(state_batch).gather(1, action_batch)
-
-        # Compute V(s_{t+1}) for all next states.
-        next_state_values = Variable(torch.zeros(self.BATCH_SIZE).type(Tensor))
-
-        q_next = self.target_Q_model(non_final_next_states).detach()
-        if(self.double_q):
-            q_eval4next = self.Q_model(non_final_next_states).detach().max(1)[1]
-            q_next = q_next.gather(1, q_eval4next.unsqueeze(1)).squeeze(1)
-        else:
-            q_next = q_next.max(1)[0]
-
-        next_state_values[non_final_mask] = q_next
-        # Now, we don't want to mess up the loss with a volatile flag, so let's
-        # clear it. After this, we'll just end up with a Variable that has
-        # requires_grad=False
-        next_state_values.volatile = False
-        # Compute the expected Q values
-        expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
-
-        # Compute Huber loss
-        loss = self.loss_func(state_action_values, expected_state_action_values)
-
-        # Optimize the model
-        self.optimizer.zero_grad()
-        loss.backward()
-        # ===== for test =====
-        # for param in self.Q_model.parameters():
-        #     param.grad.data.clamp_(-1, 1)
-        self.optimizer.step()
-        return loss
+        # return 0-2 but only 1-3 valid
+        action = self.current_Q(Variable(torch.FloatTensor(observation).unsqueeze(0)).cuda()).max(-1)[1].data[0]
+        return action + 1 if test else action

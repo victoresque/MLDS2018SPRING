@@ -7,7 +7,7 @@ def add_arguments(parser):
         parser.add_argument('--batch_size', type=int, default=32, help='batch size for training')
         parser.add_argument('--learning_rate', type=float, default=0.01, help='learning rate for training')
     '''
-    parser.add_argument('--save-freq', type=int, default=10,
+    parser.add_argument('--save-freq', type=int, default=100,
                         help='saving frequency')
     parser.add_argument('--gamma', type=float, default=0.99,
                         help='discount factor for reward in training')
@@ -18,17 +18,12 @@ def add_arguments(parser):
     """
     parser.add_argument('--hidden-size', type=int, default=200,
                         help='hidden size for the training model')
-    
     """
         For HW4-2 DQN
     """
-    parser.add_argument('--mem-cap', type=int, default=10000,
-                        help='capacity for replay memory')
-    parser.add_argument('--batch-size', type=int, default=32,
-                        help='batch size for updating model')
-    parser.add_argument('--num-episodes', type=int, default=100,
-                       help='number of episodes for playing game')
-    parser.add_argument('--target-update', type=int, default=5,
-                       help='number of episodes to update target')
-    
+    parser.add_argument('--duel', action='store_true',
+                        help='implement duel dqn')
+    parser.add_argument('--dqn_checkpoint', type=str, default='checkpoint_episode17000.pth.tar',
+                        help='dqn model checkpoint')
+
     return parser
