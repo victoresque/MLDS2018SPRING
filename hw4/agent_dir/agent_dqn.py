@@ -174,7 +174,7 @@ class Agent_DQN(Agent):
             for t in count():
                 
                 # Select and perform an action
-                action = self.make_action(state)
+                action = self.select_action(state)
                 
                 last_observation = observation
                 observation, reward, episode_done, _ = self.env.step(action[0, 0])
@@ -227,12 +227,12 @@ class Agent_DQN(Agent):
                 }
                 torch.save(log, os.path.join(self.save_path, 'checkpoint_episode{}.pth.tar'.format(episode_n)))
 
-    def make_action(self, state, test=True):
+    def make_action(self, observation, test=True):
         """
         Return predicted action of your agent
         Input:
-            state: Tensor
-                stack 4 last preprocessed frames, shape: (1, 84, 84, 4)
+            observation: np.array
+                stack 4 last preprocessed frames, shape: (84, 84, 4)
         Return:
             action: int
                 the predicted action from trained model
@@ -240,6 +240,14 @@ class Agent_DQN(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
+        state = self.Observ2Tensor(np.transpose(observation, (2, 0, 1)))
+        action = self.select_action(state, test=True)
+        return action[0, 0]
+
+    def Observ2Tensor(self, observation):
+        return torch.from_numpy(observation).unsqueeze(0).type(Tensor)
+
+    def select_action(self, state, test=False):
         sample = random.random()
         # eps_threshold = self.EPS_END + (self.EPS_START - self.EPS_END) * \
         #     math.exp(-1. * self.steps_done / self.EPS_DECAY)
@@ -254,10 +262,6 @@ class Agent_DQN(Agent):
                 Variable(state, volatile=True).type(FloatTensor)).data.max(1)[1].view(1, 1)
         else:
             return LongTensor([[self.env.get_random_action()]])
-
-    def Observ2Tensor(self, observation):
-        return torch.from_numpy(observation).unsqueeze(0).type(Tensor)
-
 
     def optimize_model(self):
         if len(self.memory) < self.BATCH_SIZE:
