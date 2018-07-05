@@ -46,9 +46,9 @@ class PG(nn.Module):
     def __init__(self, hidden_size):
         super(PG, self).__init__()
         self.fc = nn.Sequential(
-            nn.Linear(80 * 80, hidden_size),
+            nn.Linear(80 * 80, 256),
             nn.ReLU(),
-            nn.Linear(hidden_size, 1),
+            nn.Linear(256, 1),
             nn.Sigmoid()
         )
         for m in self.modules():
@@ -75,9 +75,10 @@ class Agent_PG(Agent):
         self.args = args
         self.latest_reward = []
         self.__build_model()
+        self.last_observation = None
         if args.test_pg:
-            # you can load your model here
-            print('loading trained model')
+            checkpoint = torch.load('4-1.pth.tar', map_location=lambda storage, loc: storage)
+            self.model.load_state_dict(checkpoint['state_dict'])
 
     def init_game_setting(self):
         """
@@ -86,7 +87,7 @@ class Agent_PG(Agent):
         Put anything you want to initialize if necessary
 
         """
-        pass
+        np.random.seed(12345)
 
     def __build_model(self):
         self.model = PG(self.args.hidden_size)
@@ -123,7 +124,7 @@ class Agent_PG(Agent):
                 observation_delta = observation - last_observation
                 last_observation = observation
 
-                action, up_probability = self.make_action(observation_delta)
+                action, up_probability = self.make_action(observation_delta, test=False)
 
                 observation, reward, episode_done, info = self.env.step(action)
                 observation = prepro(observation)
@@ -192,11 +193,27 @@ class Agent_PG(Agent):
         # YOUR CODE HERE #
         ##################
         self.model.eval()
+        if test:
+            observation = prepro(observation)
         observation = Variable(torch.FloatTensor(observation))
-        up_probability = self.model(observation).data.cpu().numpy()[0]
+
+        if test:
+            if self.last_observation is not None:
+                delta_observation = observation - self.last_observation
+                self.last_observation = observation
+            else:
+                delta_observation = observation
+                self.last_observation = observation
+            up_probability = self.model(delta_observation).data.cpu().numpy()[0]
+        else:
+            up_probability = self.model(observation).data.cpu().numpy()[0]
+
         action = UP_ACTION if np.random.uniform() < up_probability else DOWN_ACTION
 
-        return action, up_probability
+        if test:
+            return action
+        else:
+            return action, up_probability
 
     def discount_rewards(self, r):
         discounted_r = np.zeros_like(r)
@@ -207,28 +224,3 @@ class Agent_PG(Agent):
             running_add = running_add * self.args.gamma + r[t]
             discounted_r[t] = running_add
         return discounted_r
-
-
-if __name__ == '__main__':
-    import argparse
-    from environment import Environment
-    parser = argparse.ArgumentParser(description="MLDS 2018 HW4")
-    parser.add_argument('--env_name', default=None, help='environment name')
-    parser.add_argument('--train_pg', action='store_true', help='whether train policy gradient')
-    parser.add_argument('--train_dqn', action='store_true', help='whether train DQN')
-    parser.add_argument('--test_pg', action='store_true', help='whether test policy gradient')
-    parser.add_argument('--test_dqn', action='store_true', help='whether test DQN')
-    parser.add_argument('--save-freq', type=int, default=1,
-                        help='saving frequency')
-    parser.add_argument('--lr', type=float, default=0.0005,
-                        help='learning rate for training')
-    parser.add_argument('--hidden-size', type=int, default=200,
-                        help='hidden size for the training model')
-    parser.add_argument('--gamma', type=float, default=0.99,
-                        help='discount factor for reward in training')
-    args = parser.parse_args()
-    env_name = args.env_name or 'Pong-v0'
-    env = Environment(env_name, args)
-    from agent_dir.agent_pg import Agent_PG
-    agent = Agent_PG(env, args)
-    agent.train()
