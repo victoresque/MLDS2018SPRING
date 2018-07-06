@@ -1,3 +1,0 @@
-opencv-python
-gym
-gym[atari]
