@@ -73,9 +73,9 @@ class Agent_DQN(Agent):
         self.optimizer = torch.optim.RMSprop(self.current_Q.parameters(), lr=0.00015)
 
         self.reward_list = []
-        print("============ Breakout ============")
-        print(self.env.env.unwrapped.get_action_meanings())
-        print("==================================")
+        # print("============ Breakout ============")
+        # print(self.env.env.unwrapped.get_action_meanings())
+        # print("==================================")
 
         if args.duel:
             if not os.path.exists('checkpoints/dqn_duel'):
@@ -86,7 +86,7 @@ class Agent_DQN(Agent):
 
         if args.test_dqn:
             # you can load your model here
-            print('loading trained model')
+            # print('loading trained model')
             checkpoint = torch.load('4-2.pth.tar', map_location=lambda storage, loc: storage)
             self.current_Q.load_state_dict(checkpoint['state_dict'])
 
